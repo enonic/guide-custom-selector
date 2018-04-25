@@ -110,4 +110,12 @@ And here's a bit more advanced version of the service file that fetches book tit
 include::../src/main/resources/services/books-service/books-service.js[]
 ----
 
-image::../src/main/resources/services/books-service/custom-selector-books.png["Custom selector", width=50%, align="center"]
+The result should look something like this:
+
+image:images/custom-selector-books.png["Custom selector", width=50%, align="center"]
+
+****
+Check our https://github.com/enonic/app-features[Features app] for examples of more advanced content- and input-types.
+
+Need help? Ask questions on our https://discuss.enonic.com/[forum] or answer questions from others.
+****
