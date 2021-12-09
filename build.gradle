@@ -1,5 +1,5 @@
 plugins {
-    id 'com.enonic.xp.app' version '1.0.16'
+    id 'com.enonic.xp.app' version '3.1.0'
     id 'com.enonic.xp.doc' version '1.0.7'
 }
 
@@ -12,15 +12,15 @@ app {
 }
 
 dependencies {
-    compile "com.enonic.xp:core-api:${xpVersion}"
-    compile "com.enonic.xp:portal-api:${xpVersion}"
+    implementation "com.enonic.xp:core-api:${xpVersion}"
+    implementation "com.enonic.xp:portal-api:${xpVersion}"
     include "com.enonic.xp:lib-content:${xpVersion}"
     include "com.enonic.xp:lib-portal:${xpVersion}"
-    include "com.enonic.xp:lib-thymeleaf:${xpVersion}"
+    include "com.enonic.lib:lib-thymeleaf:2.0.1"
 }
 
 repositories {
     mavenLocal()
-    jcenter()
+    mavenCentral()
     xp.enonicRepo()
 }
