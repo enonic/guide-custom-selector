@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<content-type>
+  <display-name>Person</display-name>
+  <display-name-expression>${firstName} ${lastName}</display-name-expression>
+  <description>A minimal Person content type</description>
+  <super-type>base:structured</super-type>
+  <form>
+    <input type="TextLine" name="firstName">
+        <label>First name</label>
+        <occurrences minimum="1" maximum="1"/>
+    </input>
+    <input type="TextLine" name="lastName">
+        <label>Last name</label>
+        <occurrences minimum="1" maximum="1"/>
+    </input>
+    <input type="CustomSelector" name="country">
+      <label>Country</label>
+      <occurrences minimum="1" maximum="1"/>
+      <config>
+        <service>countries</service>
+      </config>
+    </input>
+  </form>
+</content-type>
