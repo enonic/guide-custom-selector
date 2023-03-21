@@ -4,50 +4,127 @@
 This guide will lead you through the required steps to build an input of type *Custom Selector*.
 ****
 
+== What is a custom selector
+Custom selector is a specific input type that get its items from a service.
 
-== Create a content type
+image:images/custom-selector-books.png["Custom selector", width=50%, align="center"]
 
-. Create a folder called `my-custom-selector` inside the `site/content-types` folder of your project.
-. In that folder create a configuration schema called `my-custom-selector.xml` for the new content type.
+The image above is an example of a custom selector that uses an API to populate the items to be selected.
 
-+
-[source,XML]
-----
-include::../src/main/resources/site/content-types/my-custom-selector/my-custom-selector.xml[]
-----
-+
+The flow of execution is really simple, and is described by the following diagram:
 
+image:images/custom-selector-flow.png["Custom selector", width=50%, align="center"]
+
+To read more about the details of a custom selector, visit its https://developer.enonic.com/docs/xp/stable/cms/input-types#customselector[documentation].
+
+== Strategy
+
+Our goal in this tutorial will be to implement a custom selector that lists all countries in the world, and then use this custom selector in a new content type.
+
+In order to do that we will:
+
+* Create a service that returns the list of all countries in the world
+* Create a new content type and add a custom selector input type that uses that service
+* Use an API to retrieve the data of all countries in the world
+* Use https://market.enonic.com/vendors/enonic/http-client-lib[lib http client] to consume that API and https://market.enonic.com/vendors/enonic/http-client-lib[lib cache] to avoid unecessary calls to the API
 
 == Create a service
 
-[start=3]
-. Create a folder called `my-custom-selector-service` (folder name must match the one specified in the config schema) inside the `resources/services` folder of your project.
-. In that folder create a javascript service file called `my-custom-selector-service.js` (again, the name must match the config schema).
-. Create *GET* handler method in this service file and make sure it returns JSON in proper format.
+Let's start our work by creating a service.
 
+. In order to do that create a folder `countries` inside `src/main/resources/services` and then create a `countries.js` inside the `countries` folder.
 
+. Place the following code in `countries.js`
 +
 [source,Javascript]
 ----
-include::../src/main/resources/services/my-custom-selector-service/my-custom-selector-service.js[]
+exports.get = function (request) {
+    return { 
+        status: 200, 
+        body: JSON.stringify({
+            hits: [
+                {
+                    id: 'norway',
+                    displayName: 'Norway',
+                    description: 'this is Norway'
+                },
+                {
+                    id: 'usa',
+                    displayName: 'United states of america',
+                    description: 'this is USA'
+                },
+                {
+                    id: 'france',
+                    displayName: 'France',
+                    description: 'this is France'
+                },
+                {
+                    id: 'portugal',
+                    displayName: 'Portugal',
+                    description: 'this is Portugal'
+                },
+                {
+                    id: 'iceland',
+                    displayName: 'Iceland',
+                    description: 'this is Iceland'
+                }
+            ],
+            count: 5,
+            total: 5
+        }),
+        contentType: 'application/json' 
+    };
+ }
 ----
 +
+This service basically returns a hardcoded data structure with some country items. We'll of course improve this service later, but for now this is enough to get our understanding on how the service will provide data to our custom selector.
 
-[CAUTION]
-You have to manually handle paging of items in your service based on `start` and `count` parameters of the *GET* request sent to the service.
+== Create a content type
 
+Now that we have our simple countries service, let's use it in a specific content type.
 
-NOTE: You can also refer to service file in another application (for example, `com.myapplication.app:myservice`) instead of adding one to your application.
+[start=3]
+. Create a folder named `person` inside the `site/content-types` folder of your project.
+. In that folder create a configuration schema named `person.xml` for the new content type.
++
+[source,XML]
+----
+include::../src/main/resources/site/content-types/person/person.xml[]
+----
+. Now let's test it out... you should get a selector with the items that you defined in the previously created `countries` service:
++
+image:images/custom-selector-hardcoded-service.png["Custom selector exaple 1", width=50%, align="center"]
 
-::
+NOTE: You can also refer to a service file in another application (for example, `com.myapplication.app:myservice`) instead of adding one to your application.
+
 [source,XML]
  <config>
     <service>com.myapplication.app:my-custom-selector-service</service>
  </config>
 
-== Response format
+== Request / Response format
 
-JSON response object must contain three properties:
+Before we start properly coding our service, let's understand how our custom selector and our service interacts with each other.
+
+Custom selector will request data from our service from a HTTP get request with some query params:
+
+ids::
+Array of item ids already selected in the CustomSelector. The service is expected to return the items with the specified ids.
+
+start::
+Index of the first item expected. Used for pagination of the results.
+
+count::
+Maximum number of items expected. Used for pagination of the results.
+
+query::
+String with the search text typed by the user in the CustomSelector input field.
+
+[CAUTION]
+It is the developer responsability to properly use those params in its favor to come up with performant and complex logic in order to retrieve the items from the service. For instance, pagination can be achieved based on `start` and `count` paramaters.
+
+On the other hand, our service needs to return a specific JSON data structre in order to be able to communicate with our custom selector:
+
 
 hits::
 Array of item objects
@@ -100,186 +177,53 @@ Inline image content (for example, SVG)
   "total": 2
 }
 
-== Integration with Google Books API
-
-And here's a bit more advanced version of the service file that fetches book titles from the *Google Books API*:
+As can be seen in the previous example we're using the optional `icon` and `iconUrl` to provide icons to our items.
 
 
+== Integration with CountriesNow API
+
+Our goal now is to improve our current `countries` service. We'll do that by:
+
+* Consuming an https://countriesnow.space/api/v0.1/countries/iso[API endpoint] that will retrieve the list of all countries in the world
+* Use cache to avoid unecessary requests to that API
+* Filter items based on `query` parameter in the GET request that comes from our custom selector.
+* Format that data to the proper data structure seen in the previous section
+
+[start=6]
+. Start by installing the necessary dependencies:
++
+[source,Gradle]
+    include 'com.enonic.lib:lib-http-client:3.2.1'
+    include 'com.enonic.lib:lib-cache:2.2.0'
+
+. Then replace `countries.js` service controller with the updated version of it:
++
 [source,Javascript]
 ----
-include::../src/main/resources/services/books-service/books-service.js[]
+include::../src/main/resources/services/countries/countries.js[]
 ----
 
-The result should look something like this:
+Here are some notes on this new service controller code:
 
-image:images/custom-selector-books.png["Custom selector", width=50%, align="center"]
+* `requestApiData` will get consume the API and store the returned JSON on cache.
 
-== Customize with Guillotine Lib
+* `processApiResponse` is a pure function that will get the response from the API and return a specific data structure that is the one expected from our custom selector when it is consuming our service.
 
-By default, in a GraphQL schema the type of Custom Selector is an array of strings with selected ids. You may want to override this type in your custom GraphQL schema, for instance replace array of strings with an array of custom `GoogleBook` GraphQL type.
+* It is important to make sure that our service, on success, will always returns that data structure, otherwise our custom selector will not work.
 
-Let's add a new content type with content selector which will use data from Google Books API.
+* In this example we've opted to only use the `query` parameter that comes from the GET request triggered by our custom selector
 
-[source,XML]
-----
-include::../src/main/resources/site/content-types/google-books-selector/google-books-selector.xml[]
-----
+* If we have a response from the API stored on the cache, we’ll get it, process based on the provided query param and return the json as a response. 
 
-In order to customize GraphQL schema we must use the https://developer.enonic.com/docs/guillotine/stable/embed/extending[creationCallbacks] option from Guillotine Lib context.
+* If we don’t have it stored on the cache, we’ll get it from the API, and then do the same thing.
 
-There are two ways to do that:
+Here's a diagram that summarizes the flow between our custom selector, service, API and cache:
 
-- The first way is based on integration with an https://developer.enonic.com/docs/guillotine/stable/embed/integrating[existing] GraphQL schema:
+image:images/custom-selector-and-service-flow.png["Custom selector and service flow", width=50%, align="center"]
 
-In this case, developer will be able to create new GraphQL object types and register them when creating a Guillotine context.
+And this is the final result:
 
-[source,Javascript]
-----
-const context = guillotineLib.createContext();
-
-context.types.googleBookType = context.schemaGenerator.createObjectType({
-    name: 'GoogleBook',
-    fields: {
-        id: {
-            type: graphQlLib.GraphQLString,
-        },
-        title: {
-            type: graphQlLib.GraphQLString,
-        },
-        subtitle: {
-            type: graphQlLib.GraphQLString,
-        },
-        authors: {
-            type: graphQlLib.list(graphQlLib.GraphQLString),
-        },
-        publisher: {
-            type: graphQlLib.GraphQLString,
-        },
-        publishedDate: {
-            type: graphQlLib.GraphQLString,
-        },
-        description: {
-            type: graphQlLib.GraphQLString,
-        },
-        pageCount: {
-            type: graphQlLib.GraphQLInt,
-        },
-        language: {
-            type: graphQlLib.GraphQLString,
-        },
-        averageRating: {
-            type: graphQlLib.GraphQLFloat,
-        },
-        ratingsCount: {
-            type: graphQlLib.GraphQLFloat,
-        },
-    }
-});
-----
-
-After a new GraphQL type is registered in Guillotine context we can use it in the `creationCallbacks`:
-
-[source,Javascript]
-----
-context.options.creationCallbacks = {
-    'com_enonic_app_myapp_GoogleBooksSelector_Data': (context, params) => {
-        params.fields.googleBooks = {
-            type: graphQlLib.list(context.types.googleBookType),
-            resolve: (env) => {
-                const bookIds = env.source['googleBooks'];
-                const books = [];
-                (bookIds || []).forEach(bookId => {
-                    books.push(fetchBookById(bookId)) // make request to Google Books API
-                });
-                return books;
-            }
-        };
-    },
-};
-----
-
-Then we can create a GraphQL schema. More details https://developer.enonic.com/docs/guillotine/stable/embed/extending[here].
-
-[source,Javascript]
-----
-function createSchema() {
-    const context = guillotineLib.createContext();
-
-    // create and register custom object types if needed
-
-    return context.schemaGenerator.createSchema({
-        query: createRootQueryType(context),
-        dictionary: context.dictionary,
-    });
-}
-----
-
-- The second way can be used when a GraphQL schema is created dynamically by the Guillotine Lib.
-
-In this case developer has access to Guillotine context only in the creation callback function. More details https://developer.enonic.com/docs/guillotine/stable/embed/extending[here].
-
-[source,Javascript]
-----
-function createGoogleBookGraphQLObject(context) {
-    return context.schemaGenerator.createObjectType({
-        name: 'GoogleBook',
-        fields: {
-            id: {
-                type: graphQlLib.GraphQLString,
-            },
-            title: {
-                type: graphQlLib.GraphQLString,
-            },
-            subtitle: {
-                type: graphQlLib.GraphQLString,
-            },
-            authors: {
-                type: graphQlLib.list(graphQlLib.GraphQLString),
-            },
-            publisher: {
-                type: graphQlLib.GraphQLString,
-            },
-            publishedDate: {
-                type: graphQlLib.GraphQLString,
-            },
-            description: {
-                type: graphQlLib.GraphQLString,
-            },
-            pageCount: {
-                type: graphQlLib.GraphQLInt,
-            },
-            language: {
-                type: graphQlLib.GraphQLString,
-            },
-            averageRating: {
-                type: graphQlLib.GraphQLFloat,
-            },
-            ratingsCount: {
-                type: graphQlLib.GraphQLFloat,
-            },
-        }
-    });
-}
-
-const schema = guillotineLib.createSchema({
-    creationCallbacks: {
-        'com_enonic_app_myapp_GoogleBooksSelector_Data': (context, params) => {
-            context.types.googleBookType = createGoogleBookGraphQLObject(context);
-            params.fields.googleBooks = {
-                type: graphQlLib.list(context.types.googleBookType),
-                resolve: (env) => {
-                    const bookIds = env.source['googleBooks'];
-                    const books = [];
-                    (bookIds || []).forEach(bookId => {
-                        books.push(fetchBookById(bookId))
-                    });
-                    return books;
-                }
-            };
-        },
-    }
-});
-----
+image:images/result.gif["Custom selector example 2", width=50%, align="center"]
 
 ****
 Check our https://github.com/enonic/app-features[Features app] for examples of more advanced content- and input-types.
