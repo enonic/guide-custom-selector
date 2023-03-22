@@ -1,6 +1,6 @@
 var portalLib = require('/lib/xp/portal');
-var httpClient = require('/lib/xp/http-client');
-var cacheLib = require('/lib/xp/cache');
+var httpClient = require('/lib/http-client');
+var cacheLib = require('/lib/cache');
 
 var bookIdCache = cacheLib.newCache({
     size: 100
@@ -10,8 +10,6 @@ var searchQueriesCache = cacheLib.newCache({
     size: 100,
     expire: 60 * 10
 });
-
-var apiKey = "AIzaSyDZnJCAzEXznkeBzaDDoKdj0u6nfEDFcAU";
 
 exports.get = handleGet;
 
@@ -116,7 +114,6 @@ function fetchBooks(text, start, count) {
             connectTimeout: 5000,
             readTimeout: 10000,
             params: {
-                'key': apiKey,
                 'q': text,
                 'printType': 'books',
                 'maxResults': count,

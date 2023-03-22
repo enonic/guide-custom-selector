@@ -114,6 +114,173 @@ The result should look something like this:
 
 image:images/custom-selector-books.png["Custom selector", width=50%, align="center"]
 
+== Customize with Guillotine Lib
+
+By default, in a GraphQL schema the type of Custom Selector is an array of strings with selected ids. You may want to override this type in your custom GraphQL schema, for instance replace array of strings with an array of custom `GoogleBook` GraphQL type.
+
+Let's add a new content type with content selector which will use data from Google Books API.
+
+[source,XML]
+----
+include::../src/main/resources/site/content-types/google-books-selector/google-books-selector.xml[]
+----
+
+In order to customize GraphQL schema we must use the https://developer.enonic.com/docs/guillotine/stable/embed/extending[creationCallbacks] option from Guillotine Lib context.
+
+There are two ways to do that:
+
+- The first way is based on integration with an https://developer.enonic.com/docs/guillotine/stable/embed/integrating[existing] GraphQL schema:
+
+In this case, developer will be able to create new GraphQL object types and register them when creating a Guillotine context.
+
+[source,Javascript]
+----
+const context = guillotineLib.createContext();
+
+context.types.googleBookType = context.schemaGenerator.createObjectType({
+    name: 'GoogleBook',
+    fields: {
+        id: {
+            type: graphQlLib.GraphQLString,
+        },
+        title: {
+            type: graphQlLib.GraphQLString,
+        },
+        subtitle: {
+            type: graphQlLib.GraphQLString,
+        },
+        authors: {
+            type: graphQlLib.list(graphQlLib.GraphQLString),
+        },
+        publisher: {
+            type: graphQlLib.GraphQLString,
+        },
+        publishedDate: {
+            type: graphQlLib.GraphQLString,
+        },
+        description: {
+            type: graphQlLib.GraphQLString,
+        },
+        pageCount: {
+            type: graphQlLib.GraphQLInt,
+        },
+        language: {
+            type: graphQlLib.GraphQLString,
+        },
+        averageRating: {
+            type: graphQlLib.GraphQLFloat,
+        },
+        ratingsCount: {
+            type: graphQlLib.GraphQLFloat,
+        },
+    }
+});
+----
+
+After a new GraphQL type is registered in Guillotine context we can use it in the `creationCallbacks`:
+
+[source,Javascript]
+----
+context.options.creationCallbacks = {
+    'com_enonic_app_myapp_GoogleBooksSelector_Data': (context, params) => {
+        params.fields.googleBooks = {
+            type: graphQlLib.list(context.types.googleBookType),
+            resolve: (env) => {
+                const bookIds = env.source['googleBooks'];
+                const books = [];
+                (bookIds || []).forEach(bookId => {
+                    books.push(fetchBookById(bookId)) // make request to Google Books API
+                });
+                return books;
+            }
+        };
+    },
+};
+----
+
+Then we can create a GraphQL schema. More details https://developer.enonic.com/docs/guillotine/stable/embed/extending[here].
+
+[source,Javascript]
+----
+function createSchema() {
+    const context = guillotineLib.createContext();
+
+    // create and register custom object types if needed
+
+    return context.schemaGenerator.createSchema({
+        query: createRootQueryType(context),
+        dictionary: context.dictionary,
+    });
+}
+----
+
+- The second way can be used when a GraphQL schema is created dynamically by the Guillotine Lib.
+
+In this case developer has access to Guillotine context only in the creation callback function. More details https://developer.enonic.com/docs/guillotine/stable/embed/extending[here].
+
+[source,Javascript]
+----
+function createGoogleBookGraphQLObject(context) {
+    return context.schemaGenerator.createObjectType({
+        name: 'GoogleBook',
+        fields: {
+            id: {
+                type: graphQlLib.GraphQLString,
+            },
+            title: {
+                type: graphQlLib.GraphQLString,
+            },
+            subtitle: {
+                type: graphQlLib.GraphQLString,
+            },
+            authors: {
+                type: graphQlLib.list(graphQlLib.GraphQLString),
+            },
+            publisher: {
+                type: graphQlLib.GraphQLString,
+            },
+            publishedDate: {
+                type: graphQlLib.GraphQLString,
+            },
+            description: {
+                type: graphQlLib.GraphQLString,
+            },
+            pageCount: {
+                type: graphQlLib.GraphQLInt,
+            },
+            language: {
+                type: graphQlLib.GraphQLString,
+            },
+            averageRating: {
+                type: graphQlLib.GraphQLFloat,
+            },
+            ratingsCount: {
+                type: graphQlLib.GraphQLFloat,
+            },
+        }
+    });
+}
+
+const schema = guillotineLib.createSchema({
+    creationCallbacks: {
+        'com_enonic_app_myapp_GoogleBooksSelector_Data': (context, params) => {
+            context.types.googleBookType = createGoogleBookGraphQLObject(context);
+            params.fields.googleBooks = {
+                type: graphQlLib.list(context.types.googleBookType),
+                resolve: (env) => {
+                    const bookIds = env.source['googleBooks'];
+                    const books = [];
+                    (bookIds || []).forEach(bookId => {
+                        books.push(fetchBookById(bookId))
+                    });
+                    return books;
+                }
+            };
+        },
+    }
+});
+----
+
 ****
 Check our https://github.com/enonic/app-features[Features app] for examples of more advanced content- and input-types.
 
