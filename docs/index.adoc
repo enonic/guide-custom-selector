@@ -1,53 +1,86 @@
-= Build a Custom Selector
+= Building a custom selector
 
-****
-This guide will lead you through the required steps to build an input of type *Custom Selector*.
-****
+Custom selector is a special input type that allow editors to find and select content and data from custom data sources. 
+
+This tutorial takes you through the steps of building a custom selector that integrates with the Google Books API. 
+
+NOTE: As a bonus, it also demonstrates how you may expose the book data directly in Enonic's GraphQL API via transclusion.
+
+
+== Requirements
+
+NOTE: This tutorial assumes that you are already familiar with the basic concepts of building Enonic apps, and have already https://developer.enonic.com/start[installed Enonic CLI]
+
+New to Enonic? Look into one of the following tutorials to get familiar with the platform:
+
+* https://developer.enonic.com/docs/headless-cms-intro[CMS primer] 
+* https://developer.enonic.com/docs/developer-101[Developer 101] 
+
+
+== Create a project
+
+To complete this tutorial, you may use an existing app, or follow the instructions below to create one.
+
+. Create a new app with sample content using this command:
+
+  enonic project create -r app-hmdb
+
+. Deploy to a sandbox:
+    
+    cd <newprojectfolder>
+    enonic project deploy
+
+NOTE: The app should automatically create content in a new Content Studio project called "Headless Demo".
 
 
 == Create a content type
 
-. Create a folder called `my-custom-selector` inside the `site/content-types` folder of your project.
-. In that folder create a configuration schema called `my-custom-selector.xml` for the new content type.
+With the application ready, lets kick it all off by creating a new content type. 
 
-+
+Add this file to your project: 
+
+.src/main/resources/site/content-types/book-list/book-list.xml
 [source,XML]
 ----
-include::../src/main/resources/site/content-types/my-custom-selector/my-custom-selector.xml[]
+include::../src/main/resources/site/content-types/book-list/book-list.xml[]
 ----
-+
 
+The content type has a single "CustomSelector" input. Notice the service reference `<service>book-selector</service>` in the schema. 
+
+For the custom selector to work, you will need to implement this service.
 
 == Create a service
 
-[start=3]
-. Create a folder called `my-custom-selector-service` (folder name must match the one specified in the config schema) inside the `resources/services` folder of your project.
-. In that folder create a javascript service file called `my-custom-selector-service.js` (again, the name must match the config schema).
-. Create *GET* handler method in this service file and make sure it returns JSON in proper format.
+The back-end service for you custom selector will be implemented using a JavaScript controller.
 
+Our example controller will require some additional Enonic libraries for communicating with the *Google Books API*, and caching of the results.
 
+. Add these two lines to the end of dependencies{...} section in your build file:
 +
+.build.gradle
 [source,Javascript]
 ----
-include::../src/main/resources/services/my-custom-selector-service/my-custom-selector-service.js[]
+include "com.enonic.lib:lib-http-client:3.2.1"
+include "com.enonic.lib:lib-cache:2.1.1"
 ----
 +
+NOTE: Verify that you are using current versions of the libraries by visiting Enonic Market.
++
+. Add the controller to your project:
++
+.resources/services/book-selector/book-selector.js
+[source,Javascript]
+----
+include::../src/main/resources/services/book-selector/book-selector.js[]
+----
 
-[CAUTION]
-You have to manually handle paging of items in your service based on `start` and `count` parameters of the *GET* request sent to the service.
+The controller uses the http-client to fetch content from the Google Books API, and returns it in a standard format to the custom selector interface.
 
+=== Response format
 
-NOTE: You can also refer to service file in another application (for example, `com.myapplication.app:myservice`) instead of adding one to your application.
+NOTE: A custom selector service _must_ explicitly handle paging of items in your service based on `start` and `count` parameters of the `GET` request that will be sent to the service by the custom selector input.
 
-::
-[source,XML]
- <config>
-    <service>com.myapplication.app:my-custom-selector-service</service>
- </config>
-
-== Response format
-
-JSON response object must contain three properties:
+The JSON response object from a custom selector service must implement the following format:
 
 hits::
 Array of item objects
@@ -58,8 +91,8 @@ Number of items in response
 total::
 Total number of items
 
-
-`hits` is an object containing array of items that will be listed in the selector's dropdown. Format of the object is described below:
+The `hits` array contains the objects that will be listed in the selector's dropdown. 
+The hits object must comply to the following format:
 
 id::
 Unique Id of the option
@@ -100,38 +133,99 @@ Inline image content (for example, SVG)
   "total": 2
 }
 
-== Integration with Google Books API
+== Selecting books
 
-And here's a bit more advanced version of the service file that fetches book titles from the *Google Books API*:
+With the new code deployed, you will be able to create a new "Book list" item in Content Studio, and try out the selector.
+
+Searching "for dummies" should provide something like this:
+
+image:images/custom-selector-books.png["Showing list of books afters searching in the custom selector"]
+
+Try selecting some books, and saving your changes. Your content item will now store the ID's of the selected books within the `data.books` property of your content.
 
 
+== Accessing the content
+
+With a fresh set of "Book lists" created, you may access the content directly in the GraphQL API.
+
+To access the content via GraphQL, run the following query from the `Query Playground` in Content Studio.
+
+NOTE: If you don't see `Query playground` in the Content Studio menu, it has probably not been installed yet. Simply install the https://market.enonic.com/vendors/enonic/guillotine[Guillotine application], and it will appear.
+
+[source,JSON]
+----
+TODO sample JSON
+----
+TODO sample image
+
+
+== Customizing the GraphQL API
+
+This is an optional part of the tutorial, and demonstrates how you may extend the GraphQL API to include the actual book data from the Google API.
+
+This may be beneficial, as your front-end will not have to handle integrations with the Google Books API directly.
+
+=== Setting up a custom API
+
+In the above examples, you were using the standard Guillotine app, and the standard GraphQL API. Using the Guillotine library, you will be able to create your own version of the API.
+
+Lets get the new API endpoint setup first.
+
+. Add the following line to the dependencies{...} section of your build file:
++
+.build.gradle
 [source,Javascript]
 ----
-include::../src/main/resources/services/books-service/books-service.js[]
+...
+        include "com.enonic.lib:lib-guillotine:6.0.5"
+...
+----
++
+. Add a controller to your project:
++
+.resources/controllers/customapi.js
+[source,Javascript]
+----
+var guillotineLib = require('/lib/guillotine');
+var graphQlLib = require('/lib/graphql');
+
+var schema = guillotineLib.createSchema();
+
+exports.post = function (req) {
+ var body = JSON.parse(req.body);
+ var result = JSON.stringify(graphQlLib.execute(schema, body.query, body.variables));
+ return {
+     contentType: 'application/json',
+     body: JSON.stringify(result)
+ };
+};
+----
++
+. Finally, update `site.xml` with a mapping to expose the controller as an endpoint
++
+.resources/site/site.xml
+[source,Javascript]
+----
+TODO
 ----
 
-The result should look something like this:
+After deploying the code, you should be able to access your endpoint. If you used the hmdb-app for your project, the API will now be available here:
 
-image:images/custom-selector-books.png["Custom selector", width=50%, align="center"]
+    http://localhost:8080/site/hmdb/draft/hmdb/myapi
 
-== Customize with Guillotine Lib
+Visiting with your browser should give a 405 error, as GraphQL uses the HTTP POST method.
 
-By default, in a GraphQL schema the type of Custom Selector is an array of strings with selected ids. You may want to override this type in your custom GraphQL schema, for instance replace array of strings with an array of custom `GoogleBook` GraphQL type.
+NOTE: Your controller can also implement a GET handler if desired. 
 
-Let's add a new content type with content selector which will use data from Google Books API.
+=== Adding a new Type
 
-[source,XML]
-----
-include::../src/main/resources/site/content-types/google-books-selector/google-books-selector.xml[]
-----
+With the custom API deployed, you can now extend it with a new GraphQL type, representing the Google books.
 
-In order to customize GraphQL schema we must use the https://developer.enonic.com/docs/guillotine/stable/embed/extending[creationCallbacks] option from Guillotine Lib context.
+In order to customize the API, you can use https://developer.enonic.com/docs/guillotine/stable/embed/extending[creationCallbacks].
 
-There are two ways to do that:
+NOTE: The full controller code is available at the end of this section
 
-- The first way is based on integration with an https://developer.enonic.com/docs/guillotine/stable/embed/integrating[existing] GraphQL schema:
-
-In this case, developer will be able to create new GraphQL object types and register them when creating a Guillotine context.
+This is how you may Create a GraphQL Type for GoogleBook
 
 [source,Javascript]
 ----
@@ -146,59 +240,38 @@ context.types.googleBookType = context.schemaGenerator.createObjectType({
         title: {
             type: graphQlLib.GraphQLString,
         },
-        subtitle: {
-            type: graphQlLib.GraphQLString,
-        },
         authors: {
             type: graphQlLib.list(graphQlLib.GraphQLString),
-        },
-        publisher: {
-            type: graphQlLib.GraphQLString,
-        },
-        publishedDate: {
-            type: graphQlLib.GraphQLString,
-        },
-        description: {
-            type: graphQlLib.GraphQLString,
-        },
-        pageCount: {
-            type: graphQlLib.GraphQLInt,
-        },
-        language: {
-            type: graphQlLib.GraphQLString,
-        },
-        averageRating: {
-            type: graphQlLib.GraphQLFloat,
-        },
-        ratingsCount: {
-            type: graphQlLib.GraphQLFloat,
-        },
+        }
     }
 });
 ----
 
-After a new GraphQL type is registered in Guillotine context we can use it in the `creationCallbacks`:
+Once the new type is registered you may use it in the `creationCallbacks`:
 
 [source,Javascript]
 ----
 context.options.creationCallbacks = {
-    'com_enonic_app_myapp_GoogleBooksSelector_Data': (context, params) => {
-        params.fields.googleBooks = {
+    'com_example_myproject_BookList_Data': (context, params) => {
+        params.fields.books = {
             type: graphQlLib.list(context.types.googleBookType),
             resolve: (env) => {
-                const bookIds = env.source['googleBooks'];
-                const books = [];
+                const bookIds = env.source['books'];
+                const googleBooks = [];
                 (bookIds || []).forEach(bookId => {
                     books.push(fetchBookById(bookId)) // make request to Google Books API
                 });
-                return books;
+                return googleBooks;
             }
         };
     },
 };
 ----
 
-Then we can create a GraphQL schema. More details https://developer.enonic.com/docs/guillotine/stable/embed/extending[here].
+NOTE: The `com_example_myproject_BookList_Data` must match the GraphQL type you want to override.
+
+
+The final trick is to create the GraphQL schema. https://developer.enonic.com/docs/guillotine/stable/embed/extending[More details on extending schemas].
 
 [source,Javascript]
 ----
@@ -214,75 +287,12 @@ function createSchema() {
 }
 ----
 
-- The second way can be used when a GraphQL schema is created dynamically by the Guillotine Lib.
+Try it all in your project by replacing your existing controller with the following code:
 
-In this case developer has access to Guillotine context only in the creation callback function. More details https://developer.enonic.com/docs/guillotine/stable/embed/extending[here].
-
+.resources/controllers/customapi.js
 [source,Javascript]
 ----
-function createGoogleBookGraphQLObject(context) {
-    return context.schemaGenerator.createObjectType({
-        name: 'GoogleBook',
-        fields: {
-            id: {
-                type: graphQlLib.GraphQLString,
-            },
-            title: {
-                type: graphQlLib.GraphQLString,
-            },
-            subtitle: {
-                type: graphQlLib.GraphQLString,
-            },
-            authors: {
-                type: graphQlLib.list(graphQlLib.GraphQLString),
-            },
-            publisher: {
-                type: graphQlLib.GraphQLString,
-            },
-            publishedDate: {
-                type: graphQlLib.GraphQLString,
-            },
-            description: {
-                type: graphQlLib.GraphQLString,
-            },
-            pageCount: {
-                type: graphQlLib.GraphQLInt,
-            },
-            language: {
-                type: graphQlLib.GraphQLString,
-            },
-            averageRating: {
-                type: graphQlLib.GraphQLFloat,
-            },
-            ratingsCount: {
-                type: graphQlLib.GraphQLFloat,
-            },
-        }
-    });
-}
-
-const schema = guillotineLib.createSchema({
-    creationCallbacks: {
-        'com_enonic_app_myapp_GoogleBooksSelector_Data': (context, params) => {
-            context.types.googleBookType = createGoogleBookGraphQLObject(context);
-            params.fields.googleBooks = {
-                type: graphQlLib.list(context.types.googleBookType),
-                resolve: (env) => {
-                    const bookIds = env.source['googleBooks'];
-                    const books = [];
-                    (bookIds || []).forEach(bookId => {
-                        books.push(fetchBookById(bookId))
-                    });
-                    return books;
-                }
-            };
-        },
-    }
-});
+include::../src/main/resources/controllers/customapi.js[]
 ----
 
-****
-Check our https://github.com/enonic/app-features[Features app] for examples of more advanced content- and input-types.
-
-Need help? Ask questions on our https://discuss.enonic.com/[forum] or answer questions from others.
-****
+TIP: Need help? Ask questions on our https://discuss.enonic.com/[forum] visit our https://slack.enonic.com[community Slack].
