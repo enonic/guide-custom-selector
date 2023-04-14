@@ -177,7 +177,7 @@ Inline image content (for example, SVG)
   "total": 2
 }
 
-As can be seen in the previous example we're using the optional `icon` and `iconUrl` to provide icons to our items.
+In this las example we're using the optional `icon` and `iconUrl` to provide icons to the items.
 
 
 == Integration with CountriesNow API
@@ -225,8 +225,205 @@ And this is the final result:
 
 image:images/result.gif["Custom selector example 2", width=50%, align="center"]
 
-****
-Check our https://github.com/enonic/app-features[Features app] for examples of more advanced content- and input-types.
+== Customizing with Guilliotine Lib (optional)
 
-Need help? Ask questions on our https://discuss.enonic.com/[forum] or answer questions from others.
-****
+This is an optional part of the tutorial, and demonstrates how you may extend the GraphQL API to include additional info from the CountriesNow API.
+
+=== Strategy
+
+Our goal will be to come up with a custom API endpoint (using Guillotine library), in which we'll extend the data we have under our Person content type. This guillotine extension will provide the list of all cities of the selected country that used our previously created custom selector.
+
+This may be beneficial, as your front-end will be able to avoid direct integrations with the API.
+
+=== Setting up a custom API
+
+Lets get the new API endpoint setup first:
+
+[start=8]
+. Add the following line to the dependencies{…​} section of your build file:
++
+.build.gradle
+[source,Gradle]
+----
+    include "com.enonic.lib:lib-guillotine:6.0.5"
+----
+
+. Add a controller to your project:
++
+.resources/controllers/customapi.js
+[source,Javascript]
+----
+  const guillotineLib = require('/lib/guillotine');
+  const graphQlLib = require('/lib/graphql');
+
+  var schema = guillotineLib.createSchema();
+
+  exports.post = function (req) {
+    const body = JSON.parse(req.body);
+    const result = graphQlLib.execute(schema, body.query, body.variables);
+    return {
+        contentType: 'application/json',
+        body: JSON.stringify(result)
+    };
+  };
+----
+
+. Finally, update `site.xml` with a mapping to expose the controller as an endpoint
++
+.resources/site/site.xml
+[source,XML]
+----
+  <mappings>
+    <mapping controller="/controllers/customapi.js" order="50">
+      <pattern>/customapi</pattern>
+    </mapping>
+  </mappings>
+----
+
+After deploying the code, we should be able to access our endpoint. If for instance you used the hmdb-app as your project, the API will now be available here:
+
+    http://localhost:8080/site/hmdb/draft/hmdb/myapi
+
+Visiting with your browser should give a 405 error, as GraphQL uses the HTTP POST method.
+
+NOTE: Your controller can also implement a GET handler if desired. 
+
+=== Adding a new Type
+
+With the custom API deployed, we can now extend it with a new GraphQL type, that will represent our country details, in which we'll include all cities of the selected country.
+
+In order to customize the API, you can use https://developer.enonic.com/docs/guillotine/stable/embed/extending[creationCallbacks].
+
+NOTE: The full controller code is available at the end of this section
+
+[start=11]
+. This is how you can define the type of the data you'll extend>
+
+[source,Javascript]
+----
+const context = guillotineLib.createContext();
+
+context.types.countryDetails = context.schemaGenerator.createObjectType({
+    name: 'CountryDetails',
+    fields: {
+        country: {
+            type: graphQlLib.GraphQLString,
+        },
+        cities: {
+            type: graphQlLib.list(graphQlLib.GraphQLString),
+        }
+    }
+});
+----
+
+=== Extending 
+
+[start=12]
+. Once the new type is registered you may use it in the `creationCallbacks`:
+
+[source,Javascript]
+----
+context.options.creationCallbacks = {
+    'com_example_myproject_Person_Data': (ctx, params) => {
+        params.fields.countryDetails = {
+            type: context.types.countryDetails,
+            resolve: (env) => {
+                const countryName = env.source.country || '';
+
+                if (!countryName) {
+                    return {};
+                }
+
+                return {
+                    country: countryName,
+                    cities: requestApiData(countryName)
+                }
+            }
+        };
+    },
+};
+----
+
+NOTE: The `com_example_myproject_Person_Data` must match the GraphQL type you want to override.
+
+[start=13]
+. The final trick is to create the GraphQL schema. https://developer.enonic.com/docs/guillotine/stable/embed/extending[More details on extending schemas].
+
+[source,Javascript]
+----
+function createSchema() {
+    return context.schemaGenerator.createSchema({
+        query: createRootQueryType(context),
+        dictionary: context.dictionary
+    });
+}
+----
+
+=== Final controller code
+
+[start=14]
+. Try it all in your project by replacing your existing customapi controller with the following code:
+
+.resources/controllers/customapi.js
+[source,Javascript]
+----
+include::../src/main/resources/controllers/customapi.js[]
+----
+
+=== Manual testing
+
+Let's finally consume our custom endpoint to check if everything is working as expected.
+
+image:images/data-on-playground.png["Person data on query playground", width=50%, align="center"]
+
+In this case we've ran the following query:
+----
+query {
+  guillotine {
+    get(key: "/mysite/bruno-reis") {
+      ... on com_example_myproject_Person {
+        data {
+            firstName
+            lastName
+            country
+        }
+      }
+    }
+  }
+}
+----
+in content studio query playground just to demonstrate the return of the data. 
+
+NOTE: If you don't see `Query playground` in the Content Studio menu, it has probably not been installed yet. Simply install the https://market.enonic.com/vendors/enonic/guillotine[Guillotine application], and it will appear.
+
+Queries executed on query playground will run in an endpoint that is different from the custom one we created, and therefore there is will be no `countryDetails` field in Person's content type data field:
+
+image:images/missing-field-on-playground.png["countryDetails fields missing on query playground", width=50%, align="center"]
+
+Now let's execute a POST request to our custom endpoint, requesting not only the fields from our content type, but also the field we extended:
+
+----
+query {
+  guillotine {
+    get(key: "/mysite/bruno-reis") {
+      ... on com_example_myproject_Person {
+        data {
+            firstName
+            country
+            countryDetails {
+                cities
+            }
+        }
+      }
+    }
+  }
+}
+----
+
+and here's our response
+
+image:images/data-on-altair.png["Person data including countryDetails extension", width=100%, align="center"]
+
+In this last image we've used chrome's extension Altair GraphQL Client to ran the query in a different url and  better visualize the results.
+
+TIP: Need help? Ask questions on our https://discuss.enonic.com/[forum] visit our https://slack.enonic.com[community Slack].
