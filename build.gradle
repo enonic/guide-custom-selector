@@ -1,6 +1,5 @@
 plugins {
     id 'com.enonic.xp.app' version '3.4.0'
-    id 'com.enonic.xp.doc' version '1.0.7'
 }
 
 app {
