@@ -4,31 +4,33 @@
 This guide will lead you through the required steps to build an input of type *Custom Selector*.
 ****
 
-== What is a custom selector
-Custom selector is a specific input type that get its items from a service.
+== What is a Custom Selector
+Custom Selector is a specific type of selector that gets its dataset from a service.
 
 image:images/custom-selector-books.png["Custom selector", width=100%, align="center"]
 
-The image above is an example of a custom selector that uses an API to populate the items to be selected.
+The image above is an example of a Custom Selector that uses an external API to populate the items to be selected.
 
-The flow of execution is really simple, and is described by the following diagram:
+The flow of execution is really simple and described by the following diagram:
 
 image:images/custom-selector-flow.png["Custom selector", width=100%, align="center"]
 
 To read more about the details of a custom selector, visit its https://developer.enonic.com/docs/xp/stable/cms/input-types#customselector[documentation].
 
-== Strategy
+== Implementation
 
-Our goal in this tutorial will be to implement a custom selector that lists all countries in the world, and then use this custom selector in a new content type.
+Our goal in this tutorial will be to implement a Custom Selector that lists all countries in the world, and then use it in a new content type.
 
 In order to do that we will:
 
-* Create a service that returns the list of all countries in the world
-* Create a new content type and add a custom selector input type that uses that service
-* Use an API to retrieve the data of all countries in the world
-* Use https://market.enonic.com/vendors/enonic/http-client-lib[lib http client] to consume that API and https://market.enonic.com/vendors/enonic/http-client-lib[lib cache] to avoid unecessary calls to the API
+* Create a service that returns the list of all countries in the world.
+* Create a Custom Selector input type which uses this service
+* Create a new content type which contains this Custom Selector
+* Our service will fetch data from an external API. We will use https://market.enonic.com/vendors/enonic/http-client-lib[lib http client] to consume that API and https://market.enonic.com/vendors/enonic/http-client-lib[lib cache] to avoid unnecessary calls to the API
 
-== Create a service
+TIP: Don't have time for implementation and just want to see the result? Check out the <<index#_tldr, TLDR section>> in the end of this tutorial.
+
+=== Create a service
 
 Let's start our work by creating a service.
 
@@ -39,8 +41,8 @@ Let's start our work by creating a service.
 [source,Javascript]
 ----
 exports.get = function (request) {
-    return { 
-        status: 200, 
+    return {
+        status: 200,
         body: JSON.stringify({
             hits: [
                 {
@@ -72,18 +74,18 @@ exports.get = function (request) {
             count: 5,
             total: 5
         }),
-        contentType: 'application/json' 
+        contentType: 'application/json'
     };
  }
 ----
 +
-This service basically returns a hardcoded data structure with some country items. We'll of course improve this service later, but for now this is enough to get our understanding on how the service will provide data to our custom selector.
+This service basically returns a hardcoded data structure with some country items. We'll of course improve this service later, but for now this is enough to get our understanding of how the service will provide data to our Custom Selector.
 
-== Create a content type
+=== Create a content type
 
 Now that we have our simple countries service, let's use it in a specific content type.
 
-[start=3]
+
 . Create a folder named `person` inside the `site/content-types` folder of your project.
 . In that folder create a configuration schema named `person.xml` for the new content type.
 +
@@ -91,7 +93,16 @@ Now that we have our simple countries service, let's use it in a specific conten
 ----
 include::../src/main/resources/site/content-types/person/person.xml[]
 ----
-. Now let's test it out... you should get a selector with the items that you defined in the previously created `countries` service:
+
+Now let's test it out...
+
+. Create a site in Content Studio
+
+. Assign the application that contains the 'Person' content type to the site and Save
+
+. Inside the site create a new content of type 'Person'
+
+. Inside the content edit form you should see a selector with the items that you defined in the previously created `countries` service:
 +
 image:images/custom-selector-hardcoded-service.png["Custom selector exaple 1", width=100%, align="center"]
 
@@ -102,14 +113,14 @@ NOTE: You can also refer to a service file in another application (for example, 
     <service>com.myapplication.app:my-custom-selector-service</service>
  </config>
 
-== Request / Response format
+=== Request / Response format
 
-Before we start properly coding our service, let's understand how our custom selector and our service interacts with each other.
+Before we start properly coding our service, let's understand how our Custom Selector and our service interact with each other.
 
-Custom selector will request data from our service from a HTTP get request with some query params:
+Custom Selector will request data from the service from a HTTP GET request with some query params:
 
 ids::
-Array of item ids already selected in the CustomSelector. The service is expected to return the items with the specified ids.
+Array of item ids already selected in the Custom Selector. The service is expected to return the items with the specified ids.
 
 start::
 Index of the first item expected. Used for pagination of the results.
@@ -121,9 +132,9 @@ query::
 String with the search text typed by the user in the CustomSelector input field.
 
 [CAUTION]
-It is the developer responsability to properly use those params in its favor to come up with performant and complex logic in order to retrieve the items from the service. For instance, pagination can be achieved based on `start` and `count` paramaters.
+It is the developer's responsibility to properly use those params to ensure performant and complex logic in order to retrieve the items from the service. For instance, pagination can be achieved based on `start` and `count` parameters.
 
-On the other hand, our service needs to return a specific JSON data structre in order to be able to communicate with our custom selector:
+On the other hand, our service needs to return a specific JSON data structure in order to be able to communicate with our Custom Selector:
 
 .Sample JSON response:
 [source,JSON]
@@ -160,22 +171,21 @@ On the other hand, our service needs to return a specific JSON data structre in 
 <7> Number of items in response
 <8> Total number of items
 
-`hits` is an object containing array of items that will be listed in the selector's dropdown. In this last example we're using the optional `icon` and `iconUrl` to provide icons to the items.
+`hits` is an object containing array of items that will be listed in the selector's dropdown. In this last example we're using the optional `icon` and `iconUrl` to provide icons for the items in the response.
 
-== Integration with CountriesNow API
+=== Integration with CountriesNow API
 
 Our goal now is to improve our current `countries` service. We'll do that by:
 
 * Consuming an https://countriesnow.space/api/v0.1/countries/iso[API endpoint] that will retrieve the list of all countries in the world
-* Use cache to avoid unecessary requests to that API
+* Use cache to avoid unnecessary requests to this API
 * Filter items based on `query` parameter in the GET request that comes from our custom selector.
-* Format that data to the proper data structure seen in the previous section
+* Format data to ensure proper data structure seen in the previous section
 
-[start=6]
 . Start by installing the necessary dependencies:
 +
 [source,Gradle]
-    include 'com.enonic.lib:lib-http-client:3.2.1'
+    include 'com.enonic.lib:lib-http-client:3.2.2'
     include 'com.enonic.lib:lib-cache:2.2.0'
 
 . Then replace `countries.js` service controller with the updated version of it:
@@ -187,17 +197,19 @@ include::../src/main/resources/services/countries/countries.js[]
 
 Here are some notes on this new service controller code:
 
-* `requestApiData` will get consume the API and store the returned JSON on cache.
+* `fetchCountryList` will consume the API to fetch the list of all countries and store the returned JSON on cache.
 
-* `processApiResponse` is a pure function that will get the response from the API and return a specific data structure that is the one expected from our custom selector when it is consuming our service.
+* `fetchCityList` will do the same for fetching the list of all cities of a specific country. This will be used later on in the tutorial.
 
-* It is important to make sure that our service, on success, will always returns that data structure, otherwise our custom selector will not work.
+* `processApiResponse` is a function that processes response from `fetchCountryList` and returns a specific data structure expected by Custom Selector when it consumes our service.
 
-* In this example we've opted to only use the `query` parameter that comes from the GET request triggered by our custom selector
+IMPORTANT: It is important to make sure that our service always returns data in this specific format, otherwise our Custom Selector will not work.
 
-* If we have a response from the API stored on the cache, we’ll get it, process based on the provided query param and return the json as a response. 
+* In this example we've opted to only use the `query` parameter that comes from the GET request triggered by our Custom Selector
 
-* If we don’t have it stored on the cache, we’ll get it from the API, and then do the same thing.
+* If we have a response from the API already stored in the cache, we’ll retrieve it, process it based on the provided query param and return the JSON as a response, skipping the API call.
+
+* If we don’t have it stored on the cache, we’ll get it from the API, and then store it in the cache.
 
 Here's a diagram that summarizes the flow between our custom selector, service, API and cache:
 
@@ -207,194 +219,40 @@ And this is the final result:
 
 image:images/result.gif["Custom selector example 2", width=100%, align="center"]
 
-== Customizing with Guilliotine Lib (optional)
+== Integration with GraphQL API (optional)
 
 This is an optional part of the tutorial, and demonstrates how you may extend the GraphQL API to include additional info from the CountriesNow API.
 
-=== Strategy
 
-Our goal will be to come up with a custom API endpoint (using Guillotine library), in which we'll extend the data we have under our Person content type. This guillotine extension will provide the list of all cities of the selected country that used our previously created custom selector.
+== GraphQL API
 
-This may be beneficial, as your front-end will be able to avoid direct integrations with the API.
+The Headless API provides access to all the content within your project. It is based on the https://graphql.org/[GraphQL] query language, which is a powerful and flexible way to interact with your data.
 
-=== Setting up a custom API
+TIP: Want to know more about GraphQL in general? Visit the https://graphql.org[official GraphQL documentation^].
 
-Lets get the new API endpoint setup first:
+In Enonic XP the Headless API is provided by the Guillotine application. If you have followed our TLDR guide, you should already have Guillotine installed in your XP instance. If not, install it from the https://market.enonic.com/vendors/enonic/guillotine[Enonic Market].
 
-[start=8]
-. Add the following line to the dependencies{…​} section of your build file:
-+
-.build.gradle
-[source,Gradle]
+Click the GraphQL icon in the Content Studio's left hand menu to open `Query Playground`. Here you may test and play with the GraphQL API directly.
+
+=== GraphQL schema
+
+Once installed, Guillotine provides a default schema that includes all the content types and their fields. This schema is automatically generated based on the content types you have in your project.
+
+Let's say you have created a site called `my-site`and a person (content of `Person` content type) in that site called "John Doe".
+
+image:images/person-form.png["Person form", width=50%, align="center"]
+
+You can query it from the Query Playground using the following GraphQL query:
+
 ----
-    include "com.enonic.lib:lib-guillotine:6.0.5"
-----
-
-. Add a controller to your project:
-+
-.resources/controllers/customapi.js
-[source,Javascript]
-----
-  const guillotineLib = require('/lib/guillotine');
-  const graphQlLib = require('/lib/graphql');
-
-  var schema = guillotineLib.createSchema();
-
-  exports.post = function (req) {
-    const body = JSON.parse(req.body);
-    const result = graphQlLib.execute(schema, body.query, body.variables);
-    return {
-        contentType: 'application/json',
-        body: JSON.stringify(result)
-    };
-  };
-----
-
-. Finally, update `site.xml` with a mapping to expose the controller as an endpoint
-+
-.resources/site/site.xml
-[source,XML]
-----
-  <mappings>
-    <mapping controller="/controllers/customapi.js" order="50">
-      <pattern>/customapi</pattern>
-    </mapping>
-  </mappings>
-----
-
-After deploying the code, we should be able to access our endpoint. If for instance you used the hmdb-app as your project, the API will now be available here:
-
-    http://localhost:8080/site/hmdb/draft/hmdb/myapi
-
-Visiting with your browser should give a 405 error, as GraphQL uses the HTTP POST method.
-
-NOTE: Your controller can also implement a GET handler if desired. 
-
-=== Adding a new Type
-
-With the custom API deployed, we can now extend it with a new GraphQL type, that will represent our country details, in which we'll include all cities of the selected country.
-
-In order to customize the API, you can use https://developer.enonic.com/docs/guillotine/stable/embed/extending[creationCallbacks].
-
-NOTE: The full controller code is available at the end of this section
-
-[start=11]
-. This is how you can define the type of the data you'll extend>
-
-[source,Javascript]
-----
-const context = guillotineLib.createContext();
-
-context.types.countryDetails = context.schemaGenerator.createObjectType({
-    name: 'CountryDetails',
-    fields: {
-        country: {
-            type: graphQlLib.GraphQLString,
-        },
-        cities: {
-            type: graphQlLib.list(graphQlLib.GraphQLString),
-        }
-    }
-});
-----
-
-=== Extending 
-
-[start=12]
-. Once the new type is registered you may use it in the `creationCallbacks`:
-
-[source,Javascript]
-----
-context.options.creationCallbacks = {
-    'com_example_myproject_Person_Data': (ctx, params) => {
-        params.fields.countryDetails = {
-            type: context.types.countryDetails,
-            resolve: (env) => {
-                const countryName = env.source.country || '';
-
-                if (!countryName) {
-                    return {};
-                }
-
-                return {
-                    country: countryName,
-                    cities: requestApiData(countryName)
-                }
-            }
-        };
-    },
-};
-----
-
-NOTE: The `com_example_myproject_Person_Data` must match the GraphQL type you want to override.
-
-[start=13]
-. The final trick is to create the GraphQL schema. https://developer.enonic.com/docs/guillotine/stable/embed/extending[More details on extending schemas].
-
-[source,Javascript]
-----
-function createSchema() {
-    return context.schemaGenerator.createSchema({
-        query: createRootQueryType(context),
-        dictionary: context.dictionary
-    });
-}
-----
-
-=== Final controller code
-
-[start=14]
-. Try it all in your project by replacing your existing customapi controller with the following code:
-
-.resources/controllers/customapi.js
-[source,Javascript]
-----
-include::../src/main/resources/controllers/customapi.js[]
-----
-
-=== Manual testing
-
-Let's finally consume our custom endpoint to check if everything is working as expected.
-
-image:images/data-on-playground.png["Person data on query playground", width=100%, align="center"]
-
-In this case we've ran the following query:
-----
-query {
+{
   guillotine {
-    get(key: "/mysite/bruno-reis") {
+    get(key: "/my-site/john-doe") {
       ... on com_example_myproject_Person {
         data {
-            firstName
-            lastName
-            country
-        }
-      }
-    }
-  }
-}
-----
-in content studio query playground just to demonstrate the return of the data. 
-
-NOTE: If you don't see `Query playground` in the Content Studio menu, it has probably not been installed yet. Simply install the https://market.enonic.com/vendors/enonic/guillotine[Guillotine application], and it will appear.
-
-Queries executed on query playground will run in an endpoint that is different from the custom one we created, and therefore there is will be no `countryDetails` field in Person's content type data field:
-
-image:images/missing-field-on-playground.png["countryDetails fields missing on query playground", width=50%, align="center"]
-
-Now let's execute a POST request to our custom endpoint, requesting not only the fields from our content type, but also the field we extended:
-
-----
-query {
-  guillotine {
-    get(key: "/mysite/bruno-reis") {
-      ... on com_example_myproject_Person {
-        data {
-            firstName
-            country
-            countryDetails {
-                cities
-            }
+          firstName
+          lastName
+          country
         }
       }
     }
@@ -402,10 +260,75 @@ query {
 }
 ----
 
-and here's our response
+image:images/person-query.png["Person query", width=50%, align="center"]
 
-image:images/data-on-altair.png["Person data including countryDetails extension", width=100%, align="center"]
+=== Schema extension
 
-In this last image we've used chrome's extension Altair GraphQL Client to ran the query in a different url and  better visualize the results.
+But what if we want to add fields to the response which are not a part of the content type? For example, we want to add a `countryDetails` field to the `Person` content type, which will include the country's name and a list of its cities.
+
+Extending a Guillotine schema can easily be done by adding a file called guillotine.js to the src/main/resources/guillotine folder of your project. This file should contain a special `exports.extensions` function which implements new types, new fields and resolvers of the field values.
+
+
+TIP: Need help extending your Guillotine schema? Find more details in the https://developer.enonic.com/docs/guillotine/stable/extending[official documentation].
+
+Here's an example of how to extend the `Person` content type with a `countryDetails` field containing the country's name and a list of its cities:
+[source,Javascript]
+----
+include::../src/main/resources/guillotine/guillotine.js[]
+----
+
+Assuming we still have our "John Doe" person with a country selected, let's add the new fields to our GraphQL query in the Query Playground:
+
+----
+{
+  guillotine {
+    get(key: "/my-site/john-doe") {
+      ... on com_example_myproject_Person {
+        data {
+          firstName
+          lastName
+          country
+          countryDetails {
+            country
+            cities
+          }
+        }
+      }
+    }
+  }
+}
+----
+
+and here's our response:
+
+image:images/person-query-extended.png["Person data including countryDetails extension", width=50%, align="center"]
 
 TIP: Need help? Ask questions on our https://discuss.enonic.com/[forum] visit our https://slack.enonic.com[community Slack].
+
+
+== TLDR;
+
+If you want to skip the implementation details and just see the final result, you can download the source code of the project using https://developer.enonic.com/docs/enonic-cli[Enonic CLI].
+
+. Create a new project using Enonic CLI based on the `guide-custom-selector` starter:
+[source,sh]
+enonic create com.example.myproject -r guide-custom-selector
+
+. Answer "*Yes*" when asked if you want to create a sandbox for the project, and select `Essentials` when asked about the sandbox template. This will install *Content Studio* and *Guillotine* applications, needed for this tutorial.
+
+. Give any name to the sandbox and agree to using the latest version of Enonic XP.
+
+. Go inside the project folder and deploy it to your Enonic XP instance:
+[source,sh]
+cd myproject
+enonic project deploy
+
+. Open http://localhost:8080 in your browser (or just click the link).
+
+. Log in as Guest and open Content Studio
+
+. Create a new site, assign the application called "Guide to custom selector" to the site and Save.
+
+. Create one or several content items of type "Person" inside the site. You should see a Custom Selector with the list of countries inside the dropdown.
+
+. Use the Query Playground (GraphQL icon in the menu on the left) to query the person's country details, including the country's name and a list of its cities.
