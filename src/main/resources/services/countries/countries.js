@@ -3,41 +3,45 @@ const cacheLib = require('/lib/cache');
 
 const CACHE = cacheLib.newCache({ size: 1, expire: 3600 });
 const CACHE_KEY = 'COUNTRIES_API_RESPONSE';
-const API_URL = "https://countriesnow.space/api/v0.1/countries/iso";
+const API_BASE_URL = 'https://countriesnow.space/api/v0.1/countries';
+const API_COUNTRIES_URL = `${API_BASE_URL}/iso`;
+const API_CITIES_URL = `${API_BASE_URL}/cities/q`;
 
 exports.get = function (request) {
     const query = request.params.query;
-    const cacheData = CACHE.getIfPresent(CACHE_KEY);
-    let status, data, error;
- 
-    if(cacheData) {
-        status = 200;
-        data = processApiResponse(cacheData, query);
-    } else {
-        try {
-            status = 200;
-            data = processApiResponse(requestApiData(), query);
-        } catch(err) {
-            status = 500;
-            error = err.toString();
-        }
+    let status = 200, data, error;
+
+    try {
+        data = processApiResponse(fetchCountryList(), query);
+    } catch(err) {
+        status = 500;
+        error = err.toString();
     }
-   
-    let body;
-    if (status === 200) body = JSON.stringify(data);
-    if (status === 500) body = JSON.stringify({ error });
-    
-    return { status, body, contentType: 'application/json' };
+
+    const body = JSON.stringify(status === 200 ? data : { error });
+
+    return {
+        status,
+        body,
+        contentType: 'application/json'
+    };
 }
 
-function requestApiData() {
+const fetchCountryList = () => {
+    const cacheData = CACHE.getIfPresent(CACHE_KEY);
+    if (cacheData) {
+        return cacheData;
+    }
+
     const response = httpClient.request({
-        url: API_URL,
+        url: API_COUNTRIES_URL,
         method: 'GET',
         contentType: 'application/json'
     });
 
-    if(response.body.error) throw new Error('Error calling countriesnow API.');
+    if (response.body.error) {
+        throw new Error('Error calling countriesnow API.');
+    }
 
     const responseBody = JSON.parse(response.body);
 
@@ -46,7 +50,33 @@ function requestApiData() {
     return responseBody;
 }
 
-function processApiResponse(responseBody, query = '') {
+exports.fetchCityList = (countryName) => {
+    const CITY_CACHE_KEY = `${CACHE_KEY}_${countryName.toUpperCase()}`;
+    const cacheData = CACHE.getIfPresent(CITY_CACHE_KEY);
+    if (cacheData) {
+        return cacheData;
+    }
+
+    const response = httpClient.request({
+        url: API_CITIES_URL,
+        method: 'GET',
+        contentType: 'application/json',
+        queryParams: { country: countryName }
+    });
+
+    if (response.body.error){
+        throw new Error('Error calling countriesnow API.');
+    }
+
+    const responseBody = JSON.parse(response.body);
+
+    CACHE.put(CITY_CACHE_KEY, responseBody.data);
+
+    return responseBody.data;
+
+}
+
+const processApiResponse = (responseBody, query = '') => {
     let countries = [];
     responseBody.data.forEach((d) => countries = countries.concat(d.name));
 
