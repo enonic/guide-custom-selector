@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.20">
+<meta name="generator" content="Asciidoctor 2.0.21">
 <title>Build a Custom Selector</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
@@ -140,7 +140,7 @@ p a>code:hover{color:rgba(0,0,0,.9)}
 #content::before{content:none}
 #header>h1:first-child{color:rgba(0,0,0,.85);margin-top:2.25rem;margin-bottom:0}
 #header>h1:first-child+#toc{margin-top:8px;border-top:1px solid #dddddf}
-#header>h1:only-child,body.toc2 #header>h1:nth-last-child(2){border-bottom:1px solid #dddddf;padding-bottom:8px}
+#header>h1:only-child{border-bottom:1px solid #dddddf;padding-bottom:8px}
 #header .details{border-bottom:1px solid #dddddf;line-height:1.45;padding-top:.25em;padding-bottom:.25em;padding-left:.25em;color:rgba(0,0,0,.6);display:flex;flex-flow:row wrap}
 #header .details span:first-child{margin-left:-.125em}
 #header .details span.email a{color:rgba(0,0,0,.85)}
@@ -162,6 +162,7 @@ p a>code:hover{color:rgba(0,0,0,.9)}
 #toctitle{color:#7a2518;font-size:1.2em}
 @media screen and (min-width:768px){#toctitle{font-size:1.375em}
 body.toc2{padding-left:15em;padding-right:0}
+body.toc2 #header>h1:nth-last-child(2){border-bottom:1px solid #dddddf;padding-bottom:8px}
 #toc.toc2{margin-top:0!important;background:#f8f8f7;position:fixed;width:15em;left:0;top:0;border-right:1px solid #e7e7e9;border-top-width:0!important;border-bottom-width:0!important;z-index:1000;padding:1.25em 1em;height:100%;overflow:auto}
 #toc.toc2 #toctitle{margin-top:0;margin-bottom:.8rem;font-size:1.2em}
 #toc.toc2>ul{font-size:.9em;margin-bottom:0}
@@ -327,7 +328,7 @@ a.image{text-decoration:none;display:inline-block}
 a.image object{pointer-events:none}
 sup.footnote,sup.footnoteref{font-size:.875em;position:static;vertical-align:super}
 sup.footnote a,sup.footnoteref a{text-decoration:none}
-sup.footnote a:active,sup.footnoteref a:active{text-decoration:underline}
+sup.footnote a:active,sup.footnoteref a:active,#footnotes .footnote a:first-of-type:active{text-decoration:underline}
 #footnotes{padding-top:.75em;padding-bottom:.75em;margin-bottom:.625em}
 #footnotes hr{width:20%;min-width:6.25em;margin:-.25em 0 .75em;border-width:1px 0 0}
 #footnotes .footnote{padding:0 .375em 0 .225em;line-height:1.3334;font-size:.875em;margin-left:1.2em;margin-bottom:.2em}
@@ -440,22 +441,23 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#what_is_a_custom_selector">What is a custom selector</a></li>
-<li><a href="#strategy">Strategy</a></li>
+<li><a href="#what_is_a_custom_selector">What is a Custom Selector</a></li>
+<li><a href="#implementation">Implementation</a>
+<ul class="sectlevel2">
 <li><a href="#create_a_service">Create a service</a></li>
 <li><a href="#create_a_content_type">Create a content type</a></li>
 <li><a href="#request_response_format">Request / Response format</a></li>
 <li><a href="#integration_with_countriesnow_api">Integration with CountriesNow API</a></li>
-<li><a href="#customizing_with_guilliotine_lib_optional">Customizing with Guilliotine Lib (optional)</a>
-<ul class="sectlevel2">
-<li><a href="#strategy_2">Strategy</a></li>
-<li><a href="#setting_up_a_custom_api">Setting up a custom API</a></li>
-<li><a href="#adding_a_new_type">Adding a new Type</a></li>
-<li><a href="#extending">Extending</a></li>
-<li><a href="#final_controller_code">Final controller code</a></li>
-<li><a href="#manual_testing">Manual testing</a></li>
 </ul>
 </li>
+<li><a href="#integration_with_graphql_api_optional">Integration with GraphQL API (optional)</a></li>
+<li><a href="#graphql_api">GraphQL API</a>
+<ul class="sectlevel2">
+<li><a href="#graphql_schema">GraphQL schema</a></li>
+<li><a href="#schema_extension">Schema extension</a></li>
+</ul>
+</li>
+<li><a href="#tldr">TLDR;</a></li>
 </ul>
 </div>
 </div>
@@ -472,19 +474,19 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect1">
-<h2 id="what_is_a_custom_selector"><a class="link" href="#what_is_a_custom_selector">What is a custom selector</a></h2>
+<h2 id="what_is_a_custom_selector"><a class="link" href="#what_is_a_custom_selector">What is a Custom Selector</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Custom selector is a specific input type that get its items from a service.</p>
+<p>Custom Selector is a specific type of selector that gets its dataset from a service.</p>
 </div>
 <div class="paragraph">
 <p><span class="image"><img src="images/custom-selector-books.png" alt="Custom selector" width="100%"></span></p>
 </div>
 <div class="paragraph">
-<p>The image above is an example of a custom selector that uses an API to populate the items to be selected.</p>
+<p>The image above is an example of a Custom Selector that uses an external API to populate the items to be selected.</p>
 </div>
 <div class="paragraph">
-<p>The flow of execution is really simple, and is described by the following diagram:</p>
+<p>The flow of execution is really simple and described by the following diagram:</p>
 </div>
 <div class="paragraph">
 <p><span class="image"><img src="images/custom-selector-flow.png" alt="Custom selector" width="100%"></span></p>
@@ -495,10 +497,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="sect1">
-<h2 id="strategy"><a class="link" href="#strategy">Strategy</a></h2>
+<h2 id="implementation"><a class="link" href="#implementation">Implementation</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Our goal in this tutorial will be to implement a custom selector that lists all countries in the world, and then use this custom selector in a new content type.</p>
+<p>Our goal in this tutorial will be to implement a Custom Selector that lists all countries in the world, and then use it in a new content type.</p>
 </div>
 <div class="paragraph">
 <p>In order to do that we will:</p>
@@ -506,24 +508,33 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="ulist">
 <ul>
 <li>
-<p>Create a service that returns the list of all countries in the world</p>
+<p>Create a service that returns the list of all countries in the world.</p>
 </li>
 <li>
-<p>Create a new content type and add a custom selector input type that uses that service</p>
+<p>Create a Custom Selector input type which uses this service</p>
 </li>
 <li>
-<p>Use an API to retrieve the data of all countries in the world</p>
+<p>Create a new content type which contains this Custom Selector</p>
 </li>
 <li>
-<p>Use <a href="https://market.enonic.com/vendors/enonic/http-client-lib">lib http client</a> to consume that API and <a href="https://market.enonic.com/vendors/enonic/http-client-lib">lib cache</a> to avoid unecessary calls to the API</p>
+<p>Our service will fetch data from an external API. We will use <a href="https://market.enonic.com/vendors/enonic/http-client-lib">lib http client</a> to consume that API and <a href="https://market.enonic.com/vendors/enonic/http-client-lib">lib cache</a> to avoid unnecessary calls to the API</p>
 </li>
 </ul>
 </div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Don&#8217;t have time for implementation and just want to see the result? Check out the <a href="#_tldr">TLDR section</a> in the end of this tutorial.
+</td>
+</tr>
+</table>
 </div>
-</div>
-<div class="sect1">
-<h2 id="create_a_service"><a class="link" href="#create_a_service">Create a service</a></h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="create_a_service"><a class="link" href="#create_a_service">Create a service</a></h3>
 <div class="paragraph">
 <p>Let&#8217;s start our work by creating a service.</p>
 </div>
@@ -576,21 +587,19 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div class="paragraph">
-<p>This service basically returns a hardcoded data structure with some country items. We&#8217;ll of course improve this service later, but for now this is enough to get our understanding on how the service will provide data to our custom selector.</p>
+<p>This service basically returns a hardcoded data structure with some country items. We&#8217;ll of course improve this service later, but for now this is enough to get our understanding of how the service will provide data to our Custom Selector.</p>
 </div>
 </li>
 </ol>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="create_a_content_type"><a class="link" href="#create_a_content_type">Create a content type</a></h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="create_a_content_type"><a class="link" href="#create_a_content_type">Create a content type</a></h3>
 <div class="paragraph">
 <p>Now that we have our simple countries service, let&#8217;s use it in a specific content type.</p>
 </div>
 <div class="olist arabic">
-<ol class="arabic" start="3">
+<ol class="arabic">
 <li>
 <p>Create a folder named <code>person</code> inside the <code>site/content-types</code> folder of your project.</p>
 </li>
@@ -625,8 +634,24 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 </li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Now let&#8217;s test it out&#8230;&#8203;</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
 <li>
-<p>Now let&#8217;s test it out&#8230;&#8203; you should get a selector with the items that you defined in the previously created <code>countries</code> service:</p>
+<p>Create a site in Content Studio</p>
+</li>
+<li>
+<p>Assign the application that contains the 'Person' content type to the site and Save</p>
+</li>
+<li>
+<p>Inside the site create a new content of type 'Person'</p>
+</li>
+<li>
+<p>Inside the content edit form you should see a selector with the items that you defined in the previously created <code>countries</code> service:</p>
 <div class="paragraph">
 <p><span class="image"><img src="images/custom-selector-hardcoded-service.png" alt="Custom selector exaple 1" width="100%"></span></p>
 </div>
@@ -653,21 +678,19 @@ You can also refer to a service file in another application (for example, <code>
 </div>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="request_response_format"><a class="link" href="#request_response_format">Request / Response format</a></h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="request_response_format"><a class="link" href="#request_response_format">Request / Response format</a></h3>
 <div class="paragraph">
-<p>Before we start properly coding our service, let&#8217;s understand how our custom selector and our service interacts with each other.</p>
+<p>Before we start properly coding our service, let&#8217;s understand how our Custom Selector and our service interact with each other.</p>
 </div>
 <div class="paragraph">
-<p>Custom selector will request data from our service from a HTTP get request with some query params:</p>
+<p>Custom Selector will request data from the service from a HTTP GET request with some query params:</p>
 </div>
 <div class="dlist">
 <dl>
 <dt class="hdlist1">ids</dt>
 <dd>
-<p>Array of item ids already selected in the CustomSelector. The service is expected to return the items with the specified ids.</p>
+<p>Array of item ids already selected in the Custom Selector. The service is expected to return the items with the specified ids.</p>
 </dd>
 <dt class="hdlist1">start</dt>
 <dd>
@@ -690,13 +713,13 @@ You can also refer to a service file in another application (for example, <code>
 <i class="fa icon-caution" title="Caution"></i>
 </td>
 <td class="content">
-It is the developer responsability to properly use those params in its favor to come up with performant and complex logic in order to retrieve the items from the service. For instance, pagination can be achieved based on <code>start</code> and <code>count</code> paramaters.
+It is the developer&#8217;s responsibility to properly use those params to ensure performant and complex logic in order to retrieve the items from the service. For instance, pagination can be achieved based on <code>start</code> and <code>count</code> parameters.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>On the other hand, our service needs to return a specific JSON data structre in order to be able to communicate with our custom selector:</p>
+<p>On the other hand, our service needs to return a specific JSON data structure in order to be able to communicate with our Custom Selector:</p>
 </div>
 <div class="listingblock">
 <div class="title">Sample JSON response:</div>
@@ -761,13 +784,11 @@ It is the developer responsability to properly use those params in its favor to 
 </table>
 </div>
 <div class="paragraph">
-<p><code>hits</code> is an object containing array of items that will be listed in the selector&#8217;s dropdown. In this last example we&#8217;re using the optional <code>icon</code> and <code>iconUrl</code> to provide icons to the items.</p>
+<p><code>hits</code> is an object containing array of items that will be listed in the selector&#8217;s dropdown. In this last example we&#8217;re using the optional <code>icon</code> and <code>iconUrl</code> to provide icons for the items in the response.</p>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="integration_with_countriesnow_api"><a class="link" href="#integration_with_countriesnow_api">Integration with CountriesNow API</a></h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="integration_with_countriesnow_api"><a class="link" href="#integration_with_countriesnow_api">Integration with CountriesNow API</a></h3>
 <div class="paragraph">
 <p>Our goal now is to improve our current <code>countries</code> service. We&#8217;ll do that by:</p>
 </div>
@@ -777,23 +798,20 @@ It is the developer responsability to properly use those params in its favor to 
 <p>Consuming an <a href="https://countriesnow.space/api/v0.1/countries/iso">API endpoint</a> that will retrieve the list of all countries in the world</p>
 </li>
 <li>
-<p>Use cache to avoid unecessary requests to that API</p>
+<p>Use cache to avoid unnecessary requests to this API</p>
 </li>
 <li>
 <p>Filter items based on <code>query</code> parameter in the GET request that comes from our custom selector.</p>
 </li>
 <li>
-<p>Format that data to the proper data structure seen in the previous section</p>
-</li>
-</ul>
-</div>
+<p>Format data to ensure proper data structure seen in the previous section</p>
 <div class="olist arabic">
-<ol class="arabic" start="6">
+<ol class="arabic">
 <li>
 <p>Start by installing the necessary dependencies:</p>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-Gradle" data-lang="Gradle">    include 'com.enonic.lib:lib-http-client:3.2.1'
+<pre class="highlight"><code class="language-Gradle" data-lang="Gradle">    include 'com.enonic.lib:lib-http-client:3.2.2'
     include 'com.enonic.lib:lib-cache:2.2.0'</code></pre>
 </div>
 </div>
@@ -807,41 +825,45 @@ const cacheLib = require('/lib/cache');
 
 const CACHE = cacheLib.newCache({ size: 1, expire: 3600 });
 const CACHE_KEY = 'COUNTRIES_API_RESPONSE';
-const API_URL = "https://countriesnow.space/api/v0.1/countries/iso";
+const API_BASE_URL = 'https://countriesnow.space/api/v0.1/countries';
+const API_COUNTRIES_URL = `${API_BASE_URL}/iso`;
+const API_CITIES_URL = `${API_BASE_URL}/cities/q`;
 
 exports.get = function (request) {
     const query = request.params.query;
-    const cacheData = CACHE.getIfPresent(CACHE_KEY);
-    let status, data, error;
- 
-    if(cacheData) {
-        status = 200;
-        data = processApiResponse(cacheData, query);
-    } else {
-        try {
-            status = 200;
-            data = processApiResponse(requestApiData(), query);
-        } catch(err) {
-            status = 500;
-            error = err.toString();
-        }
+    let status = 200, data, error;
+
+    try {
+        data = processApiResponse(fetchCountryList(), query);
+    } catch(err) {
+        status = 500;
+        error = err.toString();
     }
-   
-    let body;
-    if (status === 200) body = JSON.stringify(data);
-    if (status === 500) body = JSON.stringify({ error });
-    
-    return { status, body, contentType: 'application/json' };
+
+    const body = JSON.stringify(status === 200 ? data : { error });
+
+    return {
+        status,
+        body,
+        contentType: 'application/json'
+    };
 }
 
-function requestApiData() {
+const fetchCountryList = () =&gt; {
+    const cacheData = CACHE.getIfPresent(CACHE_KEY);
+    if (cacheData) {
+        return cacheData;
+    }
+
     const response = httpClient.request({
-        url: API_URL,
+        url: API_COUNTRIES_URL,
         method: 'GET',
         contentType: 'application/json'
     });
 
-    if(response.body.error) throw new Error('Error calling countriesnow API.');
+    if (response.body.error) {
+        throw new Error('Error calling countriesnow API.');
+    }
 
     const responseBody = JSON.parse(response.body);
 
@@ -850,7 +872,33 @@ function requestApiData() {
     return responseBody;
 }
 
-function processApiResponse(responseBody, query = '') {
+exports.fetchCityList = (countryName) =&gt; {
+    const CITY_CACHE_KEY = `${CACHE_KEY}_${countryName.toUpperCase()}`;
+    const cacheData = CACHE.getIfPresent(CITY_CACHE_KEY);
+    if (cacheData) {
+        return cacheData;
+    }
+
+    const response = httpClient.request({
+        url: API_CITIES_URL,
+        method: 'GET',
+        contentType: 'application/json',
+        queryParams: { country: countryName }
+    });
+
+    if (response.body.error){
+        throw new Error('Error calling countriesnow API.');
+    }
+
+    const responseBody = JSON.parse(response.body);
+
+    CACHE.put(CITY_CACHE_KEY, responseBody.data);
+
+    return responseBody.data;
+
+}
+
+const processApiResponse = (responseBody, query = '') =&gt; {
     let countries = [];
     responseBody.data.forEach((d) =&gt; countries = countries.concat(d.name));
 
@@ -865,28 +913,47 @@ function processApiResponse(responseBody, query = '') {
 </li>
 </ol>
 </div>
+</li>
+</ul>
+</div>
 <div class="paragraph">
 <p>Here are some notes on this new service controller code:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><code>requestApiData</code> will get consume the API and store the returned JSON on cache.</p>
+<p><code>fetchCountryList</code> will consume the API to fetch the list of all countries and store the returned JSON on cache.</p>
 </li>
 <li>
-<p><code>processApiResponse</code> is a pure function that will get the response from the API and return a specific data structure that is the one expected from our custom selector when it is consuming our service.</p>
+<p><code>fetchCityList</code> will do the same for fetching the list of all cities of a specific country. This will be used later on in the tutorial.</p>
 </li>
 <li>
-<p>It is important to make sure that our service, on success, will always returns that data structure, otherwise our custom selector will not work.</p>
+<p><code>processApiResponse</code> is a function that processes response from <code>fetchCountryList</code> and returns a specific data structure expected by Custom Selector when it consumes our service.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+It is important to make sure that our service always returns data in this specific format, otherwise our Custom Selector will not work.
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>In this example we&#8217;ve opted to only use the <code>query</code> parameter that comes from the GET request triggered by our Custom Selector</p>
 </li>
 <li>
-<p>In this example we&#8217;ve opted to only use the <code>query</code> parameter that comes from the GET request triggered by our custom selector</p>
+<p>If we have a response from the API already stored in the cache, we’ll retrieve it, process it based on the provided query param and return the JSON as a response, skipping the API call.</p>
 </li>
 <li>
-<p>If we have a response from the API stored on the cache, we’ll get it, process based on the provided query param and return the json as a response.</p>
-</li>
-<li>
-<p>If we don’t have it stored on the cache, we’ll get it from the API, and then do the same thing.</p>
+<p>If we don’t have it stored on the cache, we’ll get it from the API, and then store it in the cache.</p>
 </li>
 </ul>
 </div>
@@ -904,328 +971,166 @@ function processApiResponse(responseBody, query = '') {
 </div>
 </div>
 </div>
+</div>
 <div class="sect1">
-<h2 id="customizing_with_guilliotine_lib_optional"><a class="link" href="#customizing_with_guilliotine_lib_optional">Customizing with Guilliotine Lib (optional)</a></h2>
+<h2 id="integration_with_graphql_api_optional"><a class="link" href="#integration_with_graphql_api_optional">Integration with GraphQL API (optional)</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>This is an optional part of the tutorial, and demonstrates how you may extend the GraphQL API to include additional info from the CountriesNow API.</p>
 </div>
-<div class="sect2">
-<h3 id="strategy_2"><a class="link" href="#strategy_2">Strategy</a></h3>
+</div>
+</div>
+<div class="sect1">
+<h2 id="graphql_api"><a class="link" href="#graphql_api">GraphQL API</a></h2>
+<div class="sectionbody">
 <div class="paragraph">
-<p>Our goal will be to come up with a custom API endpoint (using Guillotine library), in which we&#8217;ll extend the data we have under our Person content type. This guillotine extension will provide the list of all cities of the selected country that used our previously created custom selector.</p>
+<p>The Headless API provides access to all the content within your project. It is based on the <a href="https://graphql.org/">GraphQL</a> query language, which is a powerful and flexible way to interact with your data.</p>
 </div>
-<div class="paragraph">
-<p>This may be beneficial, as your front-end will be able to avoid direct integrations with the API.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="setting_up_a_custom_api"><a class="link" href="#setting_up_a_custom_api">Setting up a custom API</a></h3>
-<div class="paragraph">
-<p>Lets get the new API endpoint setup first:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic" start="8">
-<li>
-<p>Add the following line to the dependencies{…​} section of your build file:</p>
-<div class="listingblock">
-<div class="title">build.gradle</div>
-<div class="content">
-<pre class="highlight"><code class="language-Gradle" data-lang="Gradle">    include "com.enonic.lib:lib-guillotine:6.0.5"</code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Add a controller to your project:</p>
-<div class="listingblock">
-<div class="title">resources/controllers/customapi.js</div>
-<div class="content">
-<pre class="highlight"><code class="language-Javascript" data-lang="Javascript">  const guillotineLib = require('/lib/guillotine');
-  const graphQlLib = require('/lib/graphql');
-
-  var schema = guillotineLib.createSchema();
-
-  exports.post = function (req) {
-    const body = JSON.parse(req.body);
-    const result = graphQlLib.execute(schema, body.query, body.variables);
-    return {
-        contentType: 'application/json',
-        body: JSON.stringify(result)
-    };
-  };</code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Finally, update <code>site.xml</code> with a mapping to expose the controller as an endpoint</p>
-<div class="listingblock">
-<div class="title">resources/site/site.xml</div>
-<div class="content">
-<pre class="highlight"><code class="language-XML" data-lang="XML">  &lt;mappings&gt;
-    &lt;mapping controller="/controllers/customapi.js" order="50"&gt;
-      &lt;pattern&gt;/customapi&lt;/pattern&gt;
-    &lt;/mapping&gt;
-  &lt;/mappings&gt;</code></pre>
-</div>
-</div>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>After deploying the code, we should be able to access our endpoint. If for instance you used the hmdb-app as your project, the API will now be available here:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>http://localhost:8080/site/hmdb/draft/hmdb/myapi</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Visiting with your browser should give a 405 error, as GraphQL uses the HTTP POST method.</p>
-</div>
-<div class="admonitionblock note">
+<div class="admonitionblock tip">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-note" title="Note"></i>
+<i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-Your controller can also implement a GET handler if desired.
+Want to know more about GraphQL in general? Visit the <a href="https://graphql.org" target="_blank" rel="noopener">official GraphQL documentation</a>.
 </td>
 </tr>
 </table>
 </div>
+<div class="paragraph">
+<p>In Enonic XP the Headless API is provided by the Guillotine application. If you have followed our TLDR guide, you should already have Guillotine installed in your XP instance. If not, install it from the <a href="https://market.enonic.com/vendors/enonic/guillotine">Enonic Market</a>.</p>
+</div>
+<div class="paragraph">
+<p>Click the GraphQL icon in the Content Studio&#8217;s left hand menu to open <code>Query Playground</code>. Here you may test and play with the GraphQL API directly.</p>
 </div>
 <div class="sect2">
-<h3 id="adding_a_new_type"><a class="link" href="#adding_a_new_type">Adding a new Type</a></h3>
+<h3 id="graphql_schema"><a class="link" href="#graphql_schema">GraphQL schema</a></h3>
 <div class="paragraph">
-<p>With the custom API deployed, we can now extend it with a new GraphQL type, that will represent our country details, in which we&#8217;ll include all cities of the selected country.</p>
+<p>Once installed, Guillotine provides a default schema that includes all the content types and their fields. This schema is automatically generated based on the content types you have in your project.</p>
 </div>
 <div class="paragraph">
-<p>In order to customize the API, you can use <a href="https://developer.enonic.com/docs/guillotine/stable/embed/extending">creationCallbacks</a>.</p>
+<p>Let&#8217;s say you have created a site called <code>my-site</code> and a person (content of <code>Person</code> content type) in that site called "John Doe".</p>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-The full controller code is available at the end of this section
-</td>
-</tr>
-</table>
+<div class="paragraph">
+<p><span class="image"><img src="images/person-form.png" alt="Person form" width="50%"></span></p>
 </div>
-<div class="olist arabic">
-<ol class="arabic" start="11">
-<li>
-<p>This is how you can define the type of the data you&#8217;ll extend&gt;</p>
-</li>
-</ol>
+<div class="paragraph">
+<p>You can query it from the Query Playground using the following GraphQL query:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-Javascript" data-lang="Javascript">const context = guillotineLib.createContext();
-
-context.types.countryDetails = context.schemaGenerator.createObjectType({
-    name: 'CountryDetails',
-    fields: {
-        country: {
-            type: graphQlLib.GraphQLString,
-        },
-        cities: {
-            type: graphQlLib.list(graphQlLib.GraphQLString),
+<pre>{
+  guillotine {
+    get(key: "/my-site/john-doe") {
+      ... on com_example_myproject_Person {
+        data {
+          firstName
+          lastName
+          country
         }
+      }
     }
-});</code></pre>
+  }
+}</pre>
 </div>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="images/person-query.png" alt="Person query" width="50%"></span></p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="extending"><a class="link" href="#extending">Extending</a></h3>
-<div class="olist arabic">
-<ol class="arabic" start="12">
-<li>
-<p>Once the new type is registered you may use it in the <code>creationCallbacks</code>:</p>
-</li>
-</ol>
+<h3 id="schema_extension"><a class="link" href="#schema_extension">Schema extension</a></h3>
+<div class="paragraph">
+<p>But what if we want to add fields to the response which are not a part of the content type? For example, we want to add a <code>countryDetails</code> field to the <code>Person</code> content type, which will include the country&#8217;s name and a list of its cities.</p>
+</div>
+<div class="paragraph">
+<p>Extending a Guillotine schema can easily be done by adding a file called <code>guillotine.js</code> to the <code>src/main/resources/guillotine</code> folder of your project. This file should contain a special <code>exports.extensions</code> function which implements new types, new fields and resolvers of the field values.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Need help extending your Guillotine schema? Find more details in the <a href="https://developer.enonic.com/docs/guillotine/stable/extending">official documentation</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s an example of how to extend the <code>Person</code> content type with a <code>countryDetails</code> field containing the country&#8217;s name and a list of its cities:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-Javascript" data-lang="Javascript">context.options.creationCallbacks = {
-    'com_example_myproject_Person_Data': (ctx, params) =&gt; {
-        params.fields.countryDetails = {
-            type: context.types.countryDetails,
-            resolve: (env) =&gt; {
-                const countryName = env.source.country || '';
+<pre class="highlight"><code class="language-Javascript" data-lang="Javascript">const service = require('/services/countries/countries');
 
-                if (!countryName) {
-                    return {};
-                }
+const appTypePrefix = app.name.replace(/\./g, '_') + '_';
+const PERSON_DATA_TYPE = `${appTypePrefix}Person_Data`;
+const COUNTRY_DETAILS_TYPE = 'CountryDetails';
+const COUNTRY_DETAILS_FIELD = 'countryDetails';
 
-                return {
-                    country: countryName,
-                    cities: requestApiData(countryName)
+exports.extensions = (graphQL) =&gt; {
+    return {
+        types: {
+            [COUNTRY_DETAILS_TYPE]: {
+                description: COUNTRY_DETAILS_TYPE,
+                fields: {
+                    country: {
+                        type: graphQL.GraphQLString,
+                    },
+                    cities: {
+                        type: graphQL.list(graphQL.GraphQLString),
+                    }
                 }
             }
-        };
-    },
+        },
+        creationCallbacks: {
+            [PERSON_DATA_TYPE]: (params) =&gt; {
+                params.addFields({
+                    [COUNTRY_DETAILS_FIELD]: {
+                        type: graphQL.reference(COUNTRY_DETAILS_TYPE),
+                    },
+                });
+            }
+        },
+        resolvers: {
+            [PERSON_DATA_TYPE]: {
+                [COUNTRY_DETAILS_FIELD]: (env) =&gt; {
+                    const countryName = env.source.country || '';
+
+                    if (!countryName) {
+                        return null;
+                    }
+                    return {
+                        country: countryName,
+                        cities: service.fetchCityList(countryName)
+                    };
+                }
+            }
+        },
+    }
 };</code></pre>
 </div>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-The <code>com_example_myproject_Person_Data</code> must match the GraphQL type you want to override.
-</td>
-</tr>
-</table>
-</div>
-<div class="olist arabic">
-<ol class="arabic" start="13">
-<li>
-<p>The final trick is to create the GraphQL schema. <a href="https://developer.enonic.com/docs/guillotine/stable/embed/extending">More details on extending schemas</a>.</p>
-</li>
-</ol>
+<div class="paragraph">
+<p>Assuming we still have our "John Doe" person with a country selected, let&#8217;s add the new fields to our GraphQL query in the Query Playground:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-Javascript" data-lang="Javascript">function createSchema() {
-    return context.schemaGenerator.createSchema({
-        query: createRootQueryType(context),
-        dictionary: context.dictionary
-    });
-}</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="final_controller_code"><a class="link" href="#final_controller_code">Final controller code</a></h3>
-<div class="olist arabic">
-<ol class="arabic" start="14">
-<li>
-<p>Try it all in your project by replacing your existing customapi controller with the following code:</p>
-</li>
-</ol>
-</div>
-<div class="listingblock">
-<div class="title">resources/controllers/customapi.js</div>
-<div class="content">
-<pre class="highlight"><code class="language-Javascript" data-lang="Javascript">const httpClient = require('/lib/http-client');
-const guillotineLib = require('/lib/guillotine');
-const graphQlLib = require('/lib/graphql');
-
-const API_URL = "https://countriesnow.space/api/v0.1/countries/cities/q";
-
-const context = guillotineLib.createContext();
-
-context.types.countryDetails = context.schemaGenerator.createObjectType({
-    name: 'CountryDetails',
-    fields: {
-        country: {
-            type: graphQlLib.GraphQLString,
-        },
-        cities: {
-            type: graphQlLib.list(graphQlLib.GraphQLString),
-        }
-    }
-});
-
-context.options.creationCallbacks = {
-    'com_example_myproject_Person_Data': (ctx, params) =&gt; {
-        params.fields.countryDetails = {
-            type: context.types.countryDetails,
-            resolve: (env) =&gt; {
-                const countryName = env.source.country || '';
-
-                if (!countryName) {
-                    return {};
-                }
-
-                return {
-                    country: countryName,
-                    cities: requestApiData(countryName)
-                }
-            }
-        };
-    },
-};
-
-const schema = createSchema();
-
-exports.post = function (req) {
-    const body = JSON.parse(req.body);
-    const result = graphQlLib.execute(schema, body.query, body.variables);
-    return {
-        contentType: 'application/json',
-        body: JSON.stringify(result)
-    };
-};
-
-//
-
-function createSchema() {
-    return context.schemaGenerator.createSchema({
-        query: createRootQueryType(context),
-        dictionary: context.dictionary
-    });
-}
-
-function createRootQueryType(context) {
-    return context.schemaGenerator.createObjectType({
-        name: 'Query',
-        fields: {
-            guillotine: {
-                type: guillotineLib.createHeadlessCmsType(context),
-                resolve: function () {
-                    return {};
-                }
-            }
-        }
-    });
-}
-
-//
-
-function requestApiData(countryName = '') {
-    const response = httpClient.request({
-        url: API_URL,
-        method: 'GET',
-        contentType: 'application/json',
-        queryParams: { country: countryName }
-    });
-
-    if (response.body.error) throw new Error('Error calling countriesnow API.');
-
-    return JSON.parse(response.body).data;
-}</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="manual_testing"><a class="link" href="#manual_testing">Manual testing</a></h3>
-<div class="paragraph">
-<p>Let&#8217;s finally consume our custom endpoint to check if everything is working as expected.</p>
-</div>
-<div class="paragraph">
-<p><span class="image"><img src="images/data-on-playground.png" alt="Person data on query playground" width="100%"></span></p>
-</div>
-<div class="paragraph">
-<p>In this case we&#8217;ve ran the following query:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre>query {
+<pre>{
   guillotine {
-    get(key: "/mysite/bruno-reis") {
+    get(key: "/my-site/john-doe") {
       ... on com_example_myproject_Person {
         data {
-            firstName
-            lastName
+          firstName
+          lastName
+          country
+          countryDetails {
             country
+            cities
+          }
         }
       }
     }
@@ -1234,56 +1139,10 @@ function requestApiData(countryName = '') {
 </div>
 </div>
 <div class="paragraph">
-<p>in content studio query playground just to demonstrate the return of the data.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-If you don&#8217;t see <code>Query playground</code> in the Content Studio menu, it has probably not been installed yet. Simply install the <a href="https://market.enonic.com/vendors/enonic/guillotine">Guillotine application</a>, and it will appear.
-</td>
-</tr>
-</table>
+<p>and here&#8217;s our response:</p>
 </div>
 <div class="paragraph">
-<p>Queries executed on query playground will run in an endpoint that is different from the custom one we created, and therefore there is will be no <code>countryDetails</code> field in Person&#8217;s content type data field:</p>
-</div>
-<div class="paragraph">
-<p><span class="image"><img src="images/missing-field-on-playground.png" alt="countryDetails fields missing on query playground" width="50%"></span></p>
-</div>
-<div class="paragraph">
-<p>Now let&#8217;s execute a POST request to our custom endpoint, requesting not only the fields from our content type, but also the field we extended:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre>query {
-  guillotine {
-    get(key: "/mysite/bruno-reis") {
-      ... on com_example_myproject_Person {
-        data {
-            firstName
-            country
-            countryDetails {
-                cities
-            }
-        }
-      }
-    }
-  }
-}</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>and here&#8217;s our response</p>
-</div>
-<div class="paragraph">
-<p><span class="image"><img src="images/data-on-altair.png" alt="Person data including countryDetails extension" width="100%"></span></p>
-</div>
-<div class="paragraph">
-<p>In this last image we&#8217;ve used chrome&#8217;s extension Altair GraphQL Client to ran the query in a different url and  better visualize the results.</p>
+<p><span class="image"><img src="images/person-query-extended.png" alt="Person data including countryDetails extension" width="50%"></span></p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -1300,10 +1159,60 @@ Need help? Ask questions on our <a href="https://discuss.enonic.com/">forum</a> 
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="tldr"><a class="link" href="#tldr">TLDR;</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you want to skip the implementation details and just see the final result, you can download the source code of the project using <a href="https://developer.enonic.com/docs/enonic-cli">Enonic CLI</a>.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create a new project using Enonic CLI based on the <code>guide-custom-selector</code> starter:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">enonic create com.example.myproject -r guide-custom-selector</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Answer "<strong>Yes</strong>" when asked if you want to create a sandbox for the project, and select <code>Essentials</code> when asked about the sandbox template. This will install <strong>Content Studio</strong> and <strong>Guillotine</strong> applications, needed for this tutorial.</p>
+</li>
+<li>
+<p>Give any name to the sandbox and agree to using the latest version of Enonic XP.</p>
+</li>
+<li>
+<p>Go inside the project folder and deploy it to your Enonic XP instance:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">cd myproject
+enonic project deploy</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Open <a href="http://localhost:8080" class="bare">http://localhost:8080</a> in your browser (or just click the link).</p>
+</li>
+<li>
+<p>Log in as Guest and open Content Studio</p>
+</li>
+<li>
+<p>Create a new site, assign the application called "Guide to custom selector" to the site and Save.</p>
+</li>
+<li>
+<p>Create one or several content items of type "Person" inside the site. You should see a Custom Selector with the list of countries inside the dropdown.</p>
+</li>
+<li>
+<p>Use the Query Playground (GraphQL icon in the menu on the left) to query the person&#8217;s country details, including the country&#8217;s name and a list of its cities.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-08-07 09:29:23 UTC
+Last updated 2024-03-01 16:01:56 UTC
 </div>
 </div>
 </body>
