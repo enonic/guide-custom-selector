@@ -221,10 +221,7 @@ image:images/result.gif["Custom selector example 2", width=100%, align="center"]
 
 == Integration with GraphQL API (optional)
 
-This is an optional part of the tutorial, and demonstrates how you may extend the GraphQL API to include additional info from the CountriesNow API.
-
-
-== GraphQL API
+NOTE: This is an optional part of the tutorial, and demonstrates how you may extend the GraphQL API to include additional info from the CountriesNow API.
 
 The Headless API provides access to all the content within your project. It is based on the https://graphql.org/[GraphQL] query language, which is a powerful and flexible way to interact with your data.
 
