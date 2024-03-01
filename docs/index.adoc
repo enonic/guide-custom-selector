@@ -238,7 +238,7 @@ Click the GraphQL icon in the Content Studio's left hand menu to open `Query Pla
 
 Once installed, Guillotine provides a default schema that includes all the content types and their fields. This schema is automatically generated based on the content types you have in your project.
 
-Let's say you have created a site called `my-site`and a person (content of `Person` content type) in that site called "John Doe".
+Let's say you have created a site called `my-site` and a person (content of `Person` content type) in that site called "John Doe".
 
 image:images/person-form.png["Person form", width=50%, align="center"]
 
@@ -266,7 +266,7 @@ image:images/person-query.png["Person query", width=50%, align="center"]
 
 But what if we want to add fields to the response which are not a part of the content type? For example, we want to add a `countryDetails` field to the `Person` content type, which will include the country's name and a list of its cities.
 
-Extending a Guillotine schema can easily be done by adding a file called guillotine.js to the src/main/resources/guillotine folder of your project. This file should contain a special `exports.extensions` function which implements new types, new fields and resolvers of the field values.
+Extending a Guillotine schema can easily be done by adding a file called `guillotine.js` to the `src/main/resources/guillotine` folder of your project. This file should contain a special `exports.extensions` function which implements new types, new fields and resolvers of the field values.
 
 
 TIP: Need help extending your Guillotine schema? Find more details in the https://developer.enonic.com/docs/guillotine/stable/extending[official documentation].
