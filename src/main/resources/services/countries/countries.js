@@ -3,7 +3,7 @@ const cacheLib = require('/lib/cache');
 
 const CACHE = cacheLib.newCache({ size: 1, expire: 3600 });
 const CACHE_KEY = 'COUNTRIES_API_RESPONSE';
-const API_BASE_URL = "https://countriesnow.space/api/v0.1/countries";
+const API_BASE_URL = 'https://countriesnow.space/api/v0.1/countries';
 const API_COUNTRIES_URL = `${API_BASE_URL}/iso`;
 const API_CITIES_URL = `${API_BASE_URL}/cities/q`;
 

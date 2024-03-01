@@ -2,7 +2,7 @@ const service = require('/services/countries/countries');
 
 const appTypePrefix = app.name.replace(/\./g, '_') + '_';
 const PERSON_DATA_TYPE = `${appTypePrefix}Person_Data`;
-const COUNTRY_DETAILS_TYPE = `CountryDetails`;
+const COUNTRY_DETAILS_TYPE = 'CountryDetails';
 const COUNTRY_DETAILS_FIELD = 'countryDetails';
 
 exports.extensions = (graphQL) => {
