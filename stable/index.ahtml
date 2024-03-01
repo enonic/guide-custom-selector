@@ -450,8 +450,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#integration_with_countriesnow_api">Integration with CountriesNow API</a></li>
 </ul>
 </li>
-<li><a href="#integration_with_graphql_api_optional">Integration with GraphQL API (optional)</a></li>
-<li><a href="#graphql_api">GraphQL API</a>
+<li><a href="#integration_with_graphql_api_optional">Integration with GraphQL API (optional)</a>
 <ul class="sectlevel2">
 <li><a href="#graphql_schema">GraphQL schema</a></li>
 <li><a href="#schema_extension">Schema extension</a></li>
@@ -975,14 +974,18 @@ It is important to make sure that our service always returns data in this specif
 <div class="sect1">
 <h2 id="integration_with_graphql_api_optional"><a class="link" href="#integration_with_graphql_api_optional">Integration with GraphQL API (optional)</a></h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>This is an optional part of the tutorial, and demonstrates how you may extend the GraphQL API to include additional info from the CountriesNow API.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This is an optional part of the tutorial, and demonstrates how you may extend the GraphQL API to include additional info from the CountriesNow API.
+</td>
+</tr>
+</table>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="graphql_api"><a class="link" href="#graphql_api">GraphQL API</a></h2>
-<div class="sectionbody">
 <div class="paragraph">
 <p>The Headless API provides access to all the content within your project. It is based on the <a href="https://graphql.org/">GraphQL</a> query language, which is a powerful and flexible way to interact with your data.</p>
 </div>
@@ -1212,7 +1215,7 @@ enonic project deploy</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-03-01 16:01:56 UTC
+Last updated 2024-03-01 16:07:44 UTC
 </div>
 </div>
 </body>
