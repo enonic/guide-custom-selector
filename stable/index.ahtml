@@ -1198,12 +1198,12 @@ If you already have a sandbox, you can instantly link the new project to it by p
 </div>
 </div>
 <div class="olist arabic">
-<ol class="arabic">
+<ol class="arabic" start="2">
 <li>
 <p>If you don&#8217;t have a sandbox yet, answer "<strong>Yes</strong>" when asked if you want to create a sandbox for the project, and select <code>Essentials</code> when asked about the sandbox template. This will install <strong>Content Studio</strong> and <strong>Guillotine</strong> applications, needed for this tutorial.</p>
 </li>
 <li>
-<p>Give any name to the sandbox and agree to using the latest version of Enonic XP.</p>
+<p>Give the new sandbox any name and agree to using the latest version of Enonic XP.</p>
 </li>
 <li>
 <p>Go inside the project folder and deploy it to your Enonic XP instance:</p>
@@ -1236,7 +1236,7 @@ enonic project deploy</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-03-04 09:47:29 UTC
+Last updated 2024-03-04 13:53:21 UTC
 </div>
 </div>
 </body>
