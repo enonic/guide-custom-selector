@@ -491,13 +491,25 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p><span class="image"><img src="images/custom-selector-flow.png" alt="Custom selector" width="100%"></span></p>
 </div>
 <div class="paragraph">
-<p>To read more about the details of a custom selector, visit its <a href="https://developer.enonic.com/docs/xp/stable/cms/input-types#customselector">documentation</a>.</p>
+<p>To read more about specifics of the CustomSelector input type, visit its <a href="https://developer.enonic.com/docs/xp/stable/cms/schemas/input-types/customselector">documentation</a>.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="implementation"><a class="link" href="#implementation">Implementation</a></h2>
 <div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This tutorial assumes that you have a basic understanding of Enonic XP concepts, such as applications, content types, and services. It also assumes that you have an existing XP project to add a Custom Selector to. If you are new to Enonic XP, we recommend that you first read the <a href="https://developer.enonic.com/docs/intro/stable">Introduction to Enonic</a>. If you don&#8217;t have an existing application, we recommend you check out the <a href="#_tldr">TLDR section</a> in the end of this tutorial.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>Our goal in this tutorial will be to implement a Custom Selector that lists all countries in the world, and then use it in a new content type.</p>
 </div>
@@ -519,18 +531,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>Our service will fetch data from an external API. We will use <a href="https://market.enonic.com/vendors/enonic/http-client-lib">lib http client</a> to consume that API and <a href="https://market.enonic.com/vendors/enonic/http-client-lib">lib cache</a> to avoid unnecessary calls to the API</p>
 </li>
 </ul>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-Don&#8217;t have time for implementation and just want to see the result? Check out the <a href="#_tldr">TLDR section</a> in the end of this tutorial.
-</td>
-</tr>
-</table>
 </div>
 <div class="sect2">
 <h3 id="create_a_service"><a class="link" href="#create_a_service">Create a service</a></h3>
@@ -1172,14 +1172,35 @@ Need help? Ask questions on our <a href="https://discuss.enonic.com/">forum</a> 
 <ol class="arabic">
 <li>
 <p>Create a new project using Enonic CLI based on the <code>guide-custom-selector</code> starter:</p>
+</li>
+</ol>
+</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlight"><code class="language-sh" data-lang="sh">enonic create com.example.myproject -r guide-custom-selector</code></pre>
 </div>
 </div>
-</li>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If you already have a sandbox, you can instantly link the new project to it by providing <code>-s</code> parameter:
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">enonic create com.example.myproject -r guide-custom-selector -s &lt;sandbox-name&gt;</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
 <li>
-<p>Answer "<strong>Yes</strong>" when asked if you want to create a sandbox for the project, and select <code>Essentials</code> when asked about the sandbox template. This will install <strong>Content Studio</strong> and <strong>Guillotine</strong> applications, needed for this tutorial.</p>
+<p>If you don&#8217;t have a sandbox yet, answer "<strong>Yes</strong>" when asked if you want to create a sandbox for the project, and select <code>Essentials</code> when asked about the sandbox template. This will install <strong>Content Studio</strong> and <strong>Guillotine</strong> applications, needed for this tutorial.</p>
 </li>
 <li>
 <p>Give any name to the sandbox and agree to using the latest version of Enonic XP.</p>
@@ -1215,7 +1236,7 @@ enonic project deploy</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-03-01 16:07:44 UTC
+Last updated 2024-03-04 09:47:29 UTC
 </div>
 </div>
 </body>
