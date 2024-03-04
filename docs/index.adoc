@@ -317,9 +317,10 @@ TIP: If you already have a sandbox, you can instantly link the new project to it
 [source,sh]
 enonic create com.example.myproject -r guide-custom-selector -s <sandbox-name>
 
+[start=2]
 . If you don't have a sandbox yet, answer "*Yes*" when asked if you want to create a sandbox for the project, and select `Essentials` when asked about the sandbox template. This will install *Content Studio* and *Guillotine* applications, needed for this tutorial.
 
-. Give any name to the sandbox and agree to using the latest version of Enonic XP.
+. Give the new sandbox any name and agree to using the latest version of Enonic XP.
 
 . Go inside the project folder and deploy it to your Enonic XP instance:
 [source,sh]
