@@ -15,9 +15,11 @@ The flow of execution is really simple and described by the following diagram:
 
 image:images/custom-selector-flow.png["Custom selector", width=100%, align="center"]
 
-To read more about the details of a custom selector, visit its https://developer.enonic.com/docs/xp/stable/cms/input-types#customselector[documentation].
+To read more about specifics of the CustomSelector input type, visit its https://developer.enonic.com/docs/xp/stable/cms/schemas/input-types/customselector[documentation].
 
 == Implementation
+
+NOTE: This tutorial assumes that you have a basic understanding of Enonic XP concepts, such as applications, content types, and services. It also assumes that you have an existing XP project to add a Custom Selector to. If you are new to Enonic XP, we recommend that you first read the https://developer.enonic.com/docs/intro/stable[Introduction to Enonic]. If you don't have an existing application, we recommend you check out the <<index#_tldr, TLDR section>> in the end of this tutorial.
 
 Our goal in this tutorial will be to implement a Custom Selector that lists all countries in the world, and then use it in a new content type.
 
@@ -27,8 +29,6 @@ In order to do that we will:
 * Create a Custom Selector input type which uses this service
 * Create a new content type which contains this Custom Selector
 * Our service will fetch data from an external API. We will use https://market.enonic.com/vendors/enonic/http-client-lib[lib http client] to consume that API and https://market.enonic.com/vendors/enonic/http-client-lib[lib cache] to avoid unnecessary calls to the API
-
-TIP: Don't have time for implementation and just want to see the result? Check out the <<index#_tldr, TLDR section>> in the end of this tutorial.
 
 === Create a service
 
@@ -308,10 +308,16 @@ TIP: Need help? Ask questions on our https://discuss.enonic.com/[forum] visit ou
 If you want to skip the implementation details and just see the final result, you can download the source code of the project using https://developer.enonic.com/docs/enonic-cli[Enonic CLI].
 
 . Create a new project using Enonic CLI based on the `guide-custom-selector` starter:
+
 [source,sh]
 enonic create com.example.myproject -r guide-custom-selector
 
-. Answer "*Yes*" when asked if you want to create a sandbox for the project, and select `Essentials` when asked about the sandbox template. This will install *Content Studio* and *Guillotine* applications, needed for this tutorial.
+TIP: If you already have a sandbox, you can instantly link the new project to it by providing `-s` parameter:
+
+[source,sh]
+enonic create com.example.myproject -r guide-custom-selector -s <sandbox-name>
+
+. If you don't have a sandbox yet, answer "*Yes*" when asked if you want to create a sandbox for the project, and select `Essentials` when asked about the sandbox template. This will install *Content Studio* and *Guillotine* applications, needed for this tutorial.
 
 . Give any name to the sandbox and agree to using the latest version of Enonic XP.
 
